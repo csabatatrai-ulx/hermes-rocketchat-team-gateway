@@ -53,7 +53,7 @@ _try_add_hermes_agent_to_path()
 # on, so a Hermes upgrade that breaks an import (or a wrong ``HERMES_AGENT_PATH``)
 # cannot stay silently green.
 if not HERMES_AGENT_AVAILABLE and os.environ.get("HERMES_TESTS_REQUIRED") == "1":
-    raise RuntimeError(f"HERMES_TESTS_REQUIRED=1, de: {SKIP_REASON}")
+    raise RuntimeError(f"HERMES_TESTS_REQUIRED=1, but {SKIP_REASON}")
 
 
 def _load_plugin_package():

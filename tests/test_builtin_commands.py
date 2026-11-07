@@ -437,4 +437,4 @@ class TestPresetNamesAreHermesCommands(unittest.TestCase):
                 self.assertIsNotNone(command, f"{name}: no such Hermes command")
                 canonical = command.name.replace("-", "_")
                 self.assertTrue(name == canonical or name in {a.replace("-", "_") for a in command.aliases},
-                                f"{name}: a Hermes neve {command.name}")
+                                f"{name}: Hermes calls it {command.name}")
