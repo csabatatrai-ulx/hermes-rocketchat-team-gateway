@@ -1,12 +1,14 @@
 # Rocket.Chat Team Gateway for Hermes Agent
 
+[![CI](https://github.com/csabatatrai-ulx/hermes-rocketchat-team-gateway/actions/workflows/ci.yml/badge.svg)](https://github.com/csabatatrai-ulx/hermes-rocketchat-team-gateway/actions/workflows/ci.yml)
+
 A Rocket.Chat platform adapter for [Hermes Agent](https://hermes-agent.nousresearch.com/), built for rooms where many people share one bot. It does one job: carry conversations between Rocket.Chat and Hermes reliably. It registers no agent tools and holds no business logic, the same scope as Hermes's own Mattermost, Slack and Telegram adapters.
 
 Supports **Rocket.Chat 8.7 – 9.x** from one code path. Requires **Hermes 0.22.3 or newer**.
 
 - **Standalone, as Hermes asks of third-party integrations.** It lives in its own repository and changes nothing in Hermes core, so keeping up with Rocket.Chat and Hermes releases is this project's job, not the Hermes maintainers'. It passes `hermes plugins validate` with no private core imports, and a contract test covers the Hermes interfaces it relies on.
 - **Built for shared rooms.** Each person gets their own session and room context, Hermes commands are blocked over chat unless allowed, and only the person who asked can approve their dangerous command.
-- **Tested live.** 750+ unit tests, plus end-to-end runs with the official Hermes 0.23.0 image against Rocket.Chat 8.9.1, including a restart, a network outage and real clicks on the approval buttons.
+- **Tested live.** 750+ unit tests in CI against the oldest supported and the newest Hermes release, plus end-to-end runs with the official Hermes 0.23.0 image against Rocket.Chat 8.9.1, including a restart, a network outage and real clicks on the approval buttons.
 
 ![A dangerous command waits for a click. Another person's click runs nothing; the click of the person who asked runs it.](docs/images/approval-buttons.gif)
 
