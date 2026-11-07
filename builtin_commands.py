@@ -1,42 +1,34 @@
-"""Guarding Hermes's built-in slash commands on the Rocket.Chat platform.
+"""Guarding Hermes's slash commands on the Rocket.Chat platform.
 
-Hermes's admin-vs-user slash-command gating (``allow_admin_from`` in
-``config.yaml``) is off by default, and this adapter forwards any text that is
-not its own command (``/whoami``) to the agent turn unchanged. Without a guard,
-any Rocket.Chat sender who mentions the bot with ``/model ...``, ``/yolo on`` or
+Hermes's admin-vs-user slash-command gating (``allow_admin_from`` in ``config.yaml``) is off by default.
+Without a guard, any Rocket.Chat sender who mentions the bot with ``/model ...``, ``/yolo on`` or
 ``/restart`` would run that command with full Hermes privileges.
 
-**Default deny, explicit allowlist.** Every ``/word`` that the INSTALLED Hermes
-resolves to a command - its ``COMMAND_REGISTRY`` with every alias
-(``hermes_cli.commands.resolve_command``), plugin commands
-(``is_gateway_known_command``), skill bundles and the operator's
-``quick_commands`` - is blocked unless its allowlist key is on
-(``ROCKETCHAT_ALLOW_BUILTIN_<NAME>``, defaults:
-:data:`DEFAULT_ALLOWED_BUILTIN_COMMANDS`). A future Hermes command is therefore
-blocked from day one, with no change here. The Hermes imports live in
-``webhook_mixin.py``; this module stays free of them. If the Hermes registry
-cannot be imported, the guard FAILS CLOSED: every ``/word`` that is neither
-allowlisted nor an installed skill is blocked (one warning is logged).
+**Default deny, without asking Hermes what is a command.** Every ``/word`` is refused unless its allowlist
+key is on (``ROCKETCHAT_ALLOW_BUILTIN_<NAME>``, defaults: :data:`DEFAULT_ALLOWED_BUILTIN_COMMANDS`;
+``ROCKETCHAT_ALLOW_SKILL_<NAME>`` for a skill). The guard needs no knowledge of Hermes's registries, so a
+command, alias, plugin command, skill, bundle or quick command that appears later is refused from day one,
+and no Hermes change can open the guard. The cost is that a typed ``/api is down`` is refused too; the
+notice tells the person to resend it without the slash. A word containing ``/`` (a file path) is not a
+command.
 
-:data:`BUILTIN_COMMANDS` is documentation (risk and rationale per command) and
-the alias fallback of the fail-closed mode; it does not decide what is blocked.
+As a second layer, ``webhook_mixin`` marks a turn whose text Hermes itself would parse as a non-allowed
+command with the public ``MessageEvent.allow_gateway_control = False``, so a difference between the two
+parsers leaves the text conversational.
 
-Defence in depth: also set Hermes's ``group_allow_admin_from`` (rooms) and
-``allow_admin_from`` (one-to-one DMs) in ``config.yaml``, so Hermes itself refuses
-admin commands to non-admins whatever reaches it. The two lists do not cover each
-other's scope.
+:data:`BUILTIN_COMMANDS` is documentation (risk and rationale per command) and, with
+:data:`BUILTIN_COMMAND_ALIASES`, tells which key a typed word belongs to. It decides nothing about what is
+blocked: a missing or stale entry can only keep a word refused.
 
-**Skill commands are a separate gap.** Installed skills (``/computer-use``,
-``/google-workspace``, ...) are dispatched through a different registry from
-``COMMAND_REGISTRY``, with no ``allow_admin_from`` check. See
-``blocked_skill_command`` for the separate check (its own
-``ROCKETCHAT_ALLOW_SKILL_<NAME>`` allowlist, no defaults).
+Defence in depth: also set Hermes's ``group_allow_admin_from`` (rooms) and ``allow_admin_from`` (one-to-one
+DMs) in ``config.yaml``, so Hermes itself refuses admin commands to non-admins whatever reaches it. The two
+lists do not cover each other's scope.
 """
 
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Dict, FrozenSet, Mapping, Optional, Tuple
+from typing import Dict, FrozenSet, Mapping, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +40,7 @@ logger = logging.getLogger(__name__)
 BUILTIN_COMMANDS: Dict[str, Tuple[str, str]] = {
     "new": ("medium", "session reset"),
     "reset": ("medium", "alias of /new"),
+    "cancel": ("low", "answers Hermes's confirmation of /new and similar with no; not a command of its own"),
     "status": ("low", "info only (session/model/tokens); a good candidate for debugging from chat"),
     "help": ("low", "built-in help text; harmless"),
     "whoami": ("low", "the sender's own permission level; harmless"),
@@ -129,12 +122,12 @@ BUILTIN_COMMANDS: Dict[str, Tuple[str, str]] = {
 }
 
 # The effective default: EVERY command is blocked except /new (and its alias /reset),
-# /approve (needed to resolve the confirmation prompt of /new, see above) and its pair
+# /approve and /cancel (the answers to the confirmation prompt of /new, see above), /approve's pair
 # /deny (otherwise a pending dangerous command could only be approved over Rocket.Chat,
 # never denied), /stop (stops only the sender's own run; in a shared thread, that
 # thread's session, like /new), /btw and /context (read-only, and they touch only the
 # asker's own session). This is this plugin's own decision, not a Hermes default.
-DEFAULT_ALLOWED_BUILTIN_COMMANDS: FrozenSet[str] = frozenset({"new", "reset", "approve", "deny", "stop", "btw", "context"})
+DEFAULT_ALLOWED_BUILTIN_COMMANDS: FrozenSet[str] = frozenset({"new", "reset", "approve", "deny", "cancel", "stop", "btw", "context"})
 
 # Command presets (ROCKETCHAT_ALLOW_BUILTIN_PRESET). A preset EXTENDS the default set;
 # the per-command ROCKETCHAT_ALLOW_BUILTIN_<NAME> key always overrides it, so one
@@ -224,23 +217,32 @@ def allowed_builtin_commands(env: Mapping[str, str]) -> FrozenSet[str]:
     return frozenset(allowed)
 
 
-# The alias fallback of the fail-closed mode only (no importable Hermes registry).
-# Hermes dispatches a command by the canonical ``COMMAND_REGISTRY`` name (hyphenated:
-# ``reload-mcp``, ``codex-runtime``) AND by every alias. The keys above use underscores
-# (they must work as env var names) and list only some aliases, so the key lookup first
-# normalises hyphen -> underscore and then maps through this table to the canonical key.
-# With a live Hermes its own ``resolve_command`` resolves the name (see
-# :func:`make_hermes_command_resolver`), so a new alias cannot stay unguarded. /reset
-# deliberately stays its own entry (it has its own env var), not an alias here.
+# Which allowlist key a typed alias belongs to. Keys use underscores (they must work as env var names),
+# hyphens are normalised first. /reset deliberately stays its own entry, with its own env var. A new alias
+# that is missing here stays refused until it gets its own key, so a stale table cannot open anything.
 BUILTIN_COMMAND_ALIASES: Dict[str, str] = {
     "fork": "branch",
     "compact": "compress",
     "tasks": "agents",
     "q": "queue",
+    "s": "steer",
     "set_home": "sethome",
     "suggest": "suggestions",
     "bp": "blueprint",
     "v": "version",
+    "hb": "heartbeat",
+    "ctx": "context",
+    "proactive": "loop",
+    "compose": "prompt",
+    "snap": "snapshot",
+    "learning": "journey",
+    "memory_graph": "journey",
+    "sb": "statusbar",
+    "ts": "timestamps",
+    "generate_pet": "hatch",
+    "upgrade": "subscription",
+    "gateway": "platforms",
+    "exit": "quit",
 }
 
 
@@ -262,85 +264,28 @@ def parse_builtin_command_name(text: str) -> str:
     return "" if "/" in word else word
 
 
-def canonical_builtin_command_name(name: str) -> str:
-    """The :data:`BUILTIN_COMMANDS` key that ``name`` (canonical name, hyphenated
-        form or static alias) resolves to, or ``""``. Searches the documented list only
-        (the alias fallback of the fail-closed mode).
-    """
-    key = _allowlist_key(name)
-    key = BUILTIN_COMMAND_ALIASES.get(key, key)
-    return key if key in BUILTIN_COMMANDS else ""
-
-
-# The typed command word -> Hermes's canonical command name, or None/"" when Hermes does
-# not know it as a command.
-CommandResolver = Callable[[str], Optional[str]]
-
-
-def command_allowlist_key(word: str, canonical: str = "") -> str:
-    """The allowlist key (``ROCKETCHAT_ALLOW_BUILTIN_<KEY>``) for a typed word.
-
-    If the typed form has its own documented entry (``reset``), that decides;
-    otherwise the canonical name Hermes resolved (``/fork`` -> ``branch``, ``/hb`` ->
-    ``heartbeat``); without a Hermes registry the static alias table, and finally
-    the typed word itself.
-    """
+def command_allowlist_key(word: str) -> str:
+    """The allowlist key (``ROCKETCHAT_ALLOW_BUILTIN_<KEY>``) for a typed word."""
     typed = _allowlist_key(word)
     if typed in BUILTIN_COMMANDS:
         return typed
-    if canonical:
-        return _allowlist_key(canonical)
     return BUILTIN_COMMAND_ALIASES.get(typed, typed)
 
 
-def blocked_builtin_command(
-    text: str,
-    allowed: FrozenSet[str],
-    *,
-    resolve_command: Optional[CommandResolver] = None,
-    is_skill_command: Optional[Callable[[str], bool]] = None,
-) -> str:
-    """The allowlist key if ``text`` is a ``/word`` command that must NOT reach
-    Hermes - otherwise ``""``.
+def is_command_allowed(word: str, allowed: FrozenSet[str], env: Mapping[str, str]) -> bool:
+    """Whether the typed command word may reach Hermes as a command."""
+    return command_allowlist_key(word) in allowed or is_skill_command_allowed(word, env)
 
-    ``resolve_command`` (ld. :func:`make_hermes_command_resolver`) given:
-    every word the installed Hermes resolves to a command is blocked unless
-    its key is in ``allowed``; a word Hermes does not know (e.g.
-    ``/nosuchcommand``) passes - Hermes answers it with its own
-    "unknown command" notice, no command runs. A resolver that raises
-    counts as "is a command" (fail closed).
 
-    ``resolve_command`` is None (the Hermes registry is not importable):
-    FAIL CLOSED - every ``/word`` that is neither allowlisted nor an
-    installed skill (``is_skill_command``; those go to
-    :func:`blocked_skill_command` and its own allowlist) is blocked.
+def blocked_builtin_command(text: str, allowed: FrozenSet[str], env: Mapping[str, str]) -> str:
+    """The allowlist key if ``text`` is a ``/word`` that must NOT reach Hermes, otherwise ``""``.
 
-    The returned key is what ``ROCKETCHAT_ALLOW_BUILTIN_<KEY>`` uses
-    (e.g. ``/reload-mcp`` and ``/fork`` -> ``reload_mcp``/``branch``).
+    Every ``/word`` counts, known to Hermes or not: see the module docstring.
     """
     word = parse_builtin_command_name(text)
-    if not word:
+    if not word or is_command_allowed(word, allowed, env):
         return ""
-    canonical = ""
-    if resolve_command is not None:
-        try:
-            canonical = resolve_command(word) or ""
-        except Exception:  # noqa: BLE001 - when in doubt it counts as a command
-            logger.warning(
-                "Rocket.Chat: Hermes command resolution failed for /%s - blocking it",
-                word, exc_info=True,
-            )
-            canonical = word
-        if not canonical:
-            return ""
-    elif is_skill_command is not None:
-        try:
-            if is_skill_command(word):
-                return ""  # the skill guard decides (its own allowlist)
-        except Exception:  # noqa: BLE001 - when in doubt, block here
-            pass
-    key = command_allowlist_key(word, canonical)
-    return "" if key in allowed else key
+    return command_allowlist_key(word)
 
 
 # Hermes's answers that grant persistent approval (``_SLASH_CONFIRM_*_CHOICES``,
@@ -354,25 +299,6 @@ _PERSISTENT_APPROVAL_REPLIES = frozenset({
     "session", "approve session", "session approve",
 })
 PERSISTENT_APPROVAL_KEY = "always"
-
-
-def unknown_allowed_commands(
-    allowed: FrozenSet[str], resolve_command: Optional[CommandResolver]
-) -> Tuple[str, ...]:
-    """The allowed names the installed Hermes does not know as commands.
-
-    A Hermes rename or a mistyped ``ROCKETCHAT_ALLOW_BUILTIN_<NAME>`` key would
-    otherwise be silently ineffective: the command stays blocked. The startup warning
-    reports this against the running Hermes, not only in the tests. Persistent approval
-    (``always``) is its own key, not a Hermes command. Empty without a resolver
-    (fail-closed mode, which warns separately).
-    """
-    if resolve_command is None:
-        return ()
-    return tuple(sorted(
-        name for name in allowed
-        if name != PERSISTENT_APPROVAL_KEY and resolve_command(name) is None
-    ))
 
 
 def blocked_persistent_approval(text: str, allowed: FrozenSet[str]) -> str:
@@ -398,48 +324,8 @@ def blocked_persistent_approval(text: str, allowed: FrozenSet[str]) -> str:
     return PERSISTENT_APPROVAL_KEY if reply in _PERSISTENT_APPROVAL_REPLIES else ""
 
 
-def make_hermes_command_resolver(
-    resolve_command: Callable[[str], Any],
-    *,
-    is_gateway_known_command: Optional[Callable[[str], bool]] = None,
-    resolve_bundle_command_key: Optional[Callable[[str], Optional[str]]] = None,
-    quick_command_names: Optional[Callable[[], Any]] = None,
-) -> CommandResolver:
-    """The :data:`CommandResolver` built from Hermes's own resolvers (injected, so
-    the module stays testable without Hermes).
-
-    Order and scope follow Hermes's dispatch: ``COMMAND_REGISTRY`` name or alias
-    (``resolve_command``; also tries an underscore form as hyphenated, as Hermes does
-    for plugin, skill and bundle commands), plugin command
-    (``is_gateway_known_command``), skill bundle and the operator's ``quick_commands``
-    (their ``exec`` type runs a shell command). Returns the typed word's canonical
-    name or ``None``.
-    """
-
-    def _resolve(word: str) -> Optional[str]:
-        forms = [word] if "_" not in word else [word, word.replace("_", "-")]
-        for form in forms:
-            cmd = resolve_command(form)
-            if cmd is not None:
-                return str(getattr(cmd, "name", "") or form)
-        if is_gateway_known_command is not None and any(
-            is_gateway_known_command(form) for form in forms
-        ):
-            return word
-        if resolve_bundle_command_key is not None and resolve_bundle_command_key(word):
-            return word
-        if quick_command_names is not None:
-            names = quick_command_names() or ()
-            if word in {str(name).strip().lower() for name in names}:
-                return word
-        return None
-
-    return _resolve
-
-
 def is_skill_command_allowed(name: str, env: Mapping[str, str]) -> bool:
-    """Whether the installed skill ``name`` (e.g. ``"google-workspace"``) may
-    run via Rocket.Chat.
+    """Whether the skill ``name`` (e.g. ``"google-workspace"``) may run via Rocket.Chat.
 
     Deliberately FAIL-CLOSED with NO per-skill default (unlike
     :data:`DEFAULT_ALLOWED_BUILTIN_COMMANDS`, there is no skill with an
@@ -451,39 +337,3 @@ def is_skill_command_allowed(name: str, env: Mapping[str, str]) -> bool:
     raw = env.get(f"ROCKETCHAT_ALLOW_SKILL_{name.upper().replace('-', '_')}")
     value = str(raw).strip().lower() if raw is not None else ""
     return value in _TRUE_VALUES
-
-
-def blocked_skill_command(
-    text: str,
-    env: Mapping[str, str],
-    *,
-    resolve_skill_command_key: Optional[Callable[[str], Optional[str]]],
-) -> str:
-    """The skill slug if ``text`` invokes an INSTALLED-but-not-allowed Hermes
-    skill - otherwise ``""``.
-
-    ``resolve_skill_command_key`` is injected (Hermes'
-    ``agent.skill_commands.resolve_skill_command_key``) so this module stays
-    import-free of Hermes internals, same reasoning as every other injected
-    callable in this codebase (``is_whoami_command``, ...) - it is ``None`` in this plugin's own unit
-    tests and in any environment where that Hermes-core module cannot be
-    imported, in which case this check is a no-op (fails to the CALLER's
-    own judgment about whether that is acceptable - see adapter.py, which
-    logs a warning when it cannot import it, rather than silently
-    pretending the gap is covered).
-
-    Membership is checked by asking Hermes itself whether ``name`` resolves
-    to a REAL, currently-installed skill (not a static dict here) - this
-    list changes whenever a skill is installed/removed, so a hand-maintained
-    snapshot would drift.
-    """
-    if resolve_skill_command_key is None:
-        return ""
-    name = parse_builtin_command_name(text)
-    if not name:
-        return ""
-    if resolve_skill_command_key(name) is None:
-        return ""  # not an installed skill at all - not this function's concern
-    if is_skill_command_allowed(name, env):
-        return ""
-    return name

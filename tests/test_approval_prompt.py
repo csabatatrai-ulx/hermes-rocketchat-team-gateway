@@ -39,6 +39,35 @@ class ApprovalPromptTests(unittest.TestCase):
         self.assertIn("@hermes /approve", args[1])
         self.assertEqual([b["msg"] for b in kwargs["attachments"][0]["actions"]], ["@hermes /approve", "@hermes /deny"])
 
+    def _confirm(self, adapter, key="s9"):
+        return asyncio.run(adapter.send_slash_confirm(
+            chat_id="R1", title="/new", message="⚠️ **Confirm /new**\n\nFresh session.\n\nChoose:\n• **Always Approve**",
+            session_key=key, confirm_id="1", metadata={"thread_id": "T1"},
+        ))
+
+    def test_confirmation_has_buttons_and_no_always(self):
+        adapter = self._adapter(allowed_builtin_commands=frozenset({"approve", "cancel"}))
+        self.assertTrue(self._confirm(adapter).success)
+        args, kwargs = self.rest.post_message.await_args
+        self.assertEqual((args[0], args[2]), ("R1", "T1"))
+        self.assertIn("Fresh session.", args[1])
+        self.assertNotIn("Always", args[1])
+        self.assertIn("@hermes /cancel", args[1])
+        self.assertEqual([b["msg"] for b in kwargs["attachments"][0]["actions"]], ["@hermes /approve", "@hermes /cancel"])
+
+    def test_a_confirmation_answer_retires_the_card(self):
+        adapter = self._adapter(allowed_builtin_commands=frozenset({"approve", "cancel"}))
+        self._confirm(adapter, "s10")
+        asyncio.run(adapter._retire_approval_card("s10", "alice"))
+        self.rest.delete_message.assert_awaited_once_with("R1", "card1")
+        self.assertIn("Answered by @alice", self.rest.post_message.await_args.args[1])
+
+    def test_confirmation_falls_back_to_hermes_text_when_buttons_are_off_or_refused(self):
+        self.assertFalse(self._confirm(self._adapter(approval_buttons=False)).success)
+        self.assertFalse(self._confirm(self._adapter(allowed_builtin_commands=frozenset())).success)
+        self.rest.post_message.return_value = {"success": False, "error": "nope"}
+        self.assertFalse(self._confirm(self._adapter(allowed_builtin_commands=frozenset({"approve"}))).success)
+
     def test_disabled_buttons_fall_back_to_hermes_text_prompt(self):
         result = asyncio.run(self._adapter(approval_buttons=False)._send_exec_approval_prompt(self._prompt("s2")))
         self.assertFalse(result.success)

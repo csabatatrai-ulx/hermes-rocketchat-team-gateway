@@ -4,7 +4,7 @@ A Rocket.Chat platform adapter for [Hermes Agent](https://hermes-agent.nousresea
 
 Supports **Rocket.Chat 8.7 – 9.x** from one code path. Requires **Hermes 0.21.6 or newer**.
 
-- **Standalone, as Hermes asks of third-party integrations.** It lives in its own repository and changes nothing in Hermes core, so keeping up with Rocket.Chat and Hermes releases is this project's job, not the Hermes maintainers'. It passes `hermes plugins validate`, and a contract test covers the Hermes interfaces it relies on.
+- **Standalone, as Hermes asks of third-party integrations.** It lives in its own repository and changes nothing in Hermes core, so keeping up with Rocket.Chat and Hermes releases is this project's job, not the Hermes maintainers'. It passes `hermes plugins validate` with no private core imports, and a contract test covers the Hermes interfaces it relies on.
 - **Built for shared rooms.** Each person gets their own session and room context, Hermes commands are blocked over chat unless allowed, and only the person who asked can approve their dangerous command.
 - **Tested live.** 761 unit tests, plus end-to-end runs with the official Hermes 0.23.0 image against Rocket.Chat 8.9.1, including a restart, a network outage and real clicks on the approval buttons.
 
@@ -23,8 +23,8 @@ Supports **Rocket.Chat 8.7 – 9.x** from one code path. Requires **Hermes 0.21.
 
 **It guards a room with many users.**
 
-- Every Hermes command is blocked over chat unless allowed. A new command in a future Hermes is blocked from day one, and if the command registry cannot be read the guard fails closed. Otherwise anyone in a room could run `/model`, `/yolo` or `/restart`.
-- With `approvals.mode: manual`, a dangerous command waits for a click: accept and deny buttons appear on the prompt, and each click runs as the authenticated person who made it.
+- Every `/word` is refused over chat unless allowed, without asking Hermes what is a command. A new command in a future Hermes is refused from day one, and no Hermes change can open the guard. Otherwise anyone in a room could run `/model`, `/yolo` or `/restart`.
+- With `approvals.mode: manual`, a dangerous command waits for a click: accept and deny buttons appear on the prompt, and each click runs as the authenticated person who made it. Confirming `/new` works the same way.
 - Skill commands have their own allowlist, and persistent approvals that would write to the shared config are refused.
 - A bot answers only in rooms it is a member of, so nobody can pull it into a channel with a mention.
 - Lines from senders outside the allowlist are marked `[unverified sender]` in the room context, and a multi-line message cannot forge a context marker.

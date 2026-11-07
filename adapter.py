@@ -53,7 +53,7 @@ from .dedup import (
     InboundDeduplicator,
     OutboundDeduplicator,
 )
-from .approval_buttons import approval_attachments
+from .approval_buttons import approval_attachments, confirm_attachments, confirm_body
 from .scoped_env import ScopedEnv as _ScopedEnv
 from .setup_wizard import interactive_setup
 from .standalone import standalone_send
@@ -88,7 +88,6 @@ _TYPING_DDP_METHOD = "stream-notify-room"
 
 
 
-from .builtin_commands import unknown_allowed_commands
 from .reply_reference import ReplyTarget, reply_prefix
 from .shared_state import (
     pop_approval_card,
@@ -102,7 +101,7 @@ from .shared_state import (
     _shared_outbound_dedup,
     _shared_send_locks,
 )
-from .webhook_mixin import WebhookInboundMixin, _hermes_command_resolver, _resolve_skill_command_key
+from .webhook_mixin import WebhookInboundMixin
 from .ddp_transport_mixin import DdpTransportMixin
 
 
@@ -177,29 +176,6 @@ class RocketChatAdapter(
         cfg = _config_from_platform(config)
         self._cfg: RocketChatConfig = cfg
 
-
-        if _resolve_skill_command_key is None:
-            logger.warning(
-                "Rocket.Chat: could not import agent.skill_commands.resolve_skill_command_key "
-                "- the skill-command allowlist guard (builtin_commands.blocked_skill_command) "
-                "is DISABLED, meaning any Rocket.Chat sender who mentions this bot with an "
-                "installed skill's slug (e.g. /computer-use) can run it unauthenticated. This "
-                "means Hermes' internal module layout changed - re-check the import path."
-            )
-
-        # Load the command guard's Hermes resolver at startup, so an import failure's
-        # warning (fail-closed mode) lands in the startup log, not only at the first
-        # command (see webhook_mixin.py).
-        _unknown_commands = unknown_allowed_commands(
-            cfg.allowed_builtin_commands, _hermes_command_resolver()
-        )
-        if _unknown_commands:
-            logger.warning(
-                "Rocket.Chat: allowed commands that this Hermes does not know (renamed or "
-                "misspelled; they stay blocked): %s - check ROCKETCHAT_ALLOW_BUILTIN_* and "
-                "the presets in builtin_commands.py",
-                ", ".join(_unknown_commands),
-            )
 
         self._base_url: str = cfg.base_url
         self._token: str = cfg.token
@@ -689,6 +665,38 @@ class RocketChatAdapter(
         remember_approval_card(prompt.session_key, prompt.chat_id, message_id, text, tmid)
         return SendResult(success=True, message_id=message_id)
 
+    async def send_slash_confirm(
+        self,
+        chat_id: str,
+        title: str,
+        message: str,
+        session_key: str,
+        confirm_id: str,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> SendResult:
+        """Hermes's documented hook: a slash-command confirmation (``/new``) with buttons.
+
+        The buttons send the same text answers Hermes's own fallback prompt asks for, and core intercepts those
+        for the session, so ``confirm_id`` is not needed. An unsuccessful result falls back to that prompt.
+        """
+        if not self._cfg.approval_buttons:
+            return SendResult(success=False, error="Approval buttons are disabled")
+        attachments = confirm_attachments(self._cfg.bot_username, self._cfg.allowed_builtin_commands)
+        if not attachments:
+            return SendResult(success=False, error="No confirmation answer is allowed over Rocket.Chat")
+        text = self.format_message(confirm_body(message))
+        fallback = user_text("confirm_typed_fallback", bot=self._cfg.bot_username)
+        tmid = self._reply_thread_id(metadata)
+        try:
+            answer = await self._rest.post_message(chat_id, f"{text}\n\n{fallback}", tmid, attachments=attachments)
+        except RocketChatNetworkError as exc:
+            return SendResult(success=False, error=str(exc), retryable=True)
+        if not is_successful(answer):
+            return SendResult(success=False, error=str((answer or {}).get("error") or "refused"))
+        message_id = posted_message_id(answer)
+        remember_approval_card(session_key, chat_id, message_id, text, tmid)
+        return SendResult(success=True, message_id=message_id)
+
     async def _retire_approval_card(self, session_key: str, answered_by: str) -> None:
         """Replace the session's oldest answered prompt with one that has no buttons and says who answered.
 
@@ -1076,7 +1084,7 @@ _RELIED_BASE_MEMBERS = (
     "format_message", "get_chat_info", "handle_message", "_mark_connected",
     "send", "send_document", "send_image_file", "send_typing", "send_video", "send_voice",
     # not in the plugin guide; documented in ADDING_A_PLATFORM.md or the base class
-    "_source_session_key", "_send_exec_approval_prompt",
+    "_source_session_key", "_send_exec_approval_prompt", "send_slash_confirm",
     "_notify_fatal_error", "prefers_fresh_final_streaming",
     "_set_fatal_error", "splits_long_messages", "stop_typing",
     "truncate_message",

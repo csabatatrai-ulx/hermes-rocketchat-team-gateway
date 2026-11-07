@@ -10,16 +10,6 @@ The unit suite and a live end-to-end run pass on Hermes 0.22.6 and on the offici
 
 At startup the adapter checks that every base-class member it relies on exists, and logs one ERROR naming any that are missing.
 
-### Internal imports
-
-`hermes plugins validate` reports these as warnings. They exist because the command guard must resolve commands exactly as the installed Hermes does, and Hermes has no public way to ask. Each one is imported defensively, so a moved module cannot break the adapter.
-
-| Import | Purpose | If it fails |
-|---|---|---|
-| `hermes_cli.commands.resolve_command`, `is_gateway_known_command` | Is this `/word` a Hermes command? | Guard fails closed |
-| `agent.skill_bundles.resolve_bundle_command_key` | Is it a skill bundle? | Fewer known commands; unknown `/word`s still pass to Hermes |
-| `agent.skill_commands.resolve_skill_command_key` | Is it a skill command? | The skill allowlist is inactive; unknown `/word`s pass to Hermes. Check this after a Hermes upgrade |
-
 ## Rocket.Chat
 
 **Supported: 8.7 – 9.x, from one code path.** No version branches: a DDP "Method not found" answer marks the method unsupported for the process, REST falls back along an endpoint chain, and `x-deprecation-*` headers are logged once per endpoint at WARNING.

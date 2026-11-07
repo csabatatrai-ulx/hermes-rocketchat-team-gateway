@@ -77,12 +77,7 @@ PUBLIC_SURFACE = frozenset({
 # it) -> why. The command guard's imports have no documented successor: Hermes's own
 # command tiers do not cover what the guard intercepts (see docs/commands.md), so they
 # stay until Hermes offers a documented path. The list can only shrink.
-KNOWN_PRIVATE_IMPORTS = {
-    "agent.skill_commands.resolve_skill_command_key": "command guard",
-    "agent.skill_bundles.resolve_bundle_command_key": "command guard",
-    "hermes_cli.commands.is_gateway_known_command": "command guard",
-    "hermes_cli.commands.resolve_command": "command guard",
-}
+KNOWN_PRIVATE_IMPORTS: dict = {}
 
 # The ``BasePlatformAdapter`` members the documentation offers a platform plugin to
 # override or call, with the source.
@@ -110,6 +105,7 @@ DOCUMENTED_MEMBERS = {
     "_source_session_key": "ADDING_A_PLATFORM.md",
     "_event_session_key": "ADDING_A_PLATFORM.md",
     "_send_exec_approval_prompt": "ADDING_A_PLATFORM.md (interactive UX)",
+    "send_slash_confirm": "ADDING_A_PLATFORM.md (interactive UX)",
     # user guide: capabilities that can be implemented in an adapter
     "edit_message": "user-guide/features/plugins.md",
     "delete_message": "user-guide/messaging/index.md",

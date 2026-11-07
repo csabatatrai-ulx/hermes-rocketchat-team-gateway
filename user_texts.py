@@ -21,12 +21,9 @@ TEXTS = {
         "because it would affect everyone else too. Approve once: `/approve`, deny: `/deny`."
     ),
     "builtin_command_blocked": (
-        "The `/{command}` command is not enabled over Rocket.Chat. If you need it, "
-        "enable it with `{env_key}=true` in .env, then restart the Hermes gateway."
-    ),
-    "skill_command_blocked": (
-        "The `/{command}` skill is not enabled over Rocket.Chat. If you need it, "
-        "enable it with `{env_key}=true` in .env, then restart the Hermes gateway."
+        "`/{command}` is not enabled over Rocket.Chat. To send it as a normal message, leave out the "
+        "leading slash. An administrator can enable it with `{env_key}=true` in .env (`{skill_env_key}=true` "
+        "for a skill), then restart the Hermes gateway."
     ),
     # Model endpoint failures (adapter.send, classify_model_endpoint_failure).
     "model_endpoint_auth": (
@@ -49,6 +46,8 @@ TEXTS = {
     # Under the buttons of a dangerous-command prompt (adapter._send_exec_approval_prompt).
     "approval_typed_fallback": "_Or type `@{bot} /approve` or `@{bot} /deny`._",
     "approval_answered": "Answered by @{user}",
+    # Under the buttons of a slash-command confirmation (adapter.send_slash_confirm).
+    "confirm_typed_fallback": "_Or type `@{bot} /approve` or `@{bot} /cancel`._",
     # /whoami (whoami.build_whoami_reply).
     "whoami_user": "**RC user:** `{username}`",
     "whoami_emails": "**E-mail(s):** {emails}",

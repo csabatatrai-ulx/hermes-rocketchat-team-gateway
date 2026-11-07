@@ -29,7 +29,7 @@ Both inbound paths build the same payload shape and end in the same pure decisio
 | `setup_wizard.py` | `hermes gateway setup` | Yes |
 | `standalone.py` | Delivery from cron without a live adapter | Yes |
 | `inbound.py` | The decision chain, pure | No |
-| `builtin_commands.py` | Command guard | No (resolvers injected) |
+| `builtin_commands.py` | Command guard | No |
 | `history.py`, `room_session.py`, `dm_session.py` | Context windows and boundaries | No |
 | `media.py` | Attachment handling | No |
 | `dedup.py`, `shared_state.py` | Duplicate suppression, process-wide state | No |

@@ -17,7 +17,6 @@ from inbound import (  # noqa: E402
     HANDLE_BUILTIN_COMMAND_BLOCKED,
     HANDLE_DM_ONLY_NOTICE,
     HANDLE_MESSAGE,
-    HANDLE_SKILL_COMMAND_BLOCKED,
     IGNORE_DUPLICATE,
     IGNORE_NO_MENTION,
     IGNORE_NOT_ALLOWED,
@@ -38,7 +37,6 @@ from inbound import (  # noqa: E402
 from builtin_commands import (  # noqa: E402
     DEFAULT_ALLOWED_BUILTIN_COMMANDS,
     blocked_builtin_command,
-    blocked_skill_command,
 )
 
 BOT = "Hermes"
@@ -357,7 +355,7 @@ class TestClassifyInboundBuiltinCommand(unittest.TestCase):
         effective_allowed = DEFAULT_ALLOWED_BUILTIN_COMMANDS if allowed is None else allowed
         kwargs.setdefault(
             "blocked_builtin_command",
-            lambda text: blocked_builtin_command(text, effective_allowed),
+            lambda text: blocked_builtin_command(text, effective_allowed, {}),
         )
         return classify_inbound(raw if raw is not None else body(), **kwargs)
 
@@ -377,21 +375,7 @@ class TestClassifyInboundBuiltinCommand(unittest.TestCase):
         d = self.classify(body(text=f"@{BOT} /status"), allowed=frozenset({"status"}))
         self.assertEqual(d.outcome, HANDLE_MESSAGE)
 
-    def test_unrecognised_slash_text_is_not_blocked_with_a_registry(self):
-        # With a live Hermes registry: what Hermes does not know as a command passes
-        # (Hermes gives its own "unknown command" answer).
-        resolver = lambda word: {"yolo": "yolo"}.get(word)  # noqa: E731
-        d = self.classify(
-            body(text=f"@{BOT} /nosuchcommand something"),
-            blocked_builtin_command=lambda text: blocked_builtin_command(
-                text, DEFAULT_ALLOWED_BUILTIN_COMMANDS, resolve_command=resolver
-            ),
-        )
-        self.assertEqual(d.outcome, HANDLE_MESSAGE)
-
-    def test_unrecognised_slash_text_is_blocked_without_a_registry(self):
-        # Without a Hermes registry the guard fails closed: every /word not allowed is
-        # blocked.
+    def test_unrecognised_slash_text_is_blocked(self):
         d = self.classify(body(text=f"@{BOT} /nosuchcommand something"))
         self.assertEqual(d.outcome, HANDLE_BUILTIN_COMMAND_BLOCKED)
         self.assertEqual(d.builtin_command_name, "nosuchcommand")
@@ -417,74 +401,6 @@ class TestClassifyInboundBuiltinCommand(unittest.TestCase):
         # "allow everything" - see the comment above the check in inbound.py.
         d = self.classify(body(text=f"@{BOT} /new"), allowed=frozenset())
         self.assertEqual(d.outcome, HANDLE_BUILTIN_COMMAND_BLOCKED)
-
-
-class TestClassifyInboundSkillCommand(unittest.TestCase):
-    """The SEPARATE skill-command gap: skill names (/google-workspace) are dispatched via a different Hermes registry than BUILTIN_COMMANDS, so
-        TestClassifyInboundBuiltinCommand's guard cannot catch them. Its own check, outcome and allowlist.
-    """
-
-    def _resolver(self, known):
-        known_keys = {f"/{n}" for n in known}
-
-        def _resolve(name):
-            key = f"/{name}"
-            return key if key in known_keys else None
-
-        return _resolve
-
-    def classify(self, raw=None, known_skills=frozenset({"google-workspace"}), env=None, **kwargs):
-        kwargs.setdefault("bot_username", BOT)
-        kwargs.setdefault("bot_user_id", BOT_UID)
-        kwargs.setdefault(
-            "blocked_skill_command",
-            lambda text: blocked_skill_command(
-                text, env or {}, resolve_skill_command_key=self._resolver(known_skills)
-            ),
-        )
-        return classify_inbound(raw if raw is not None else body(), **kwargs)
-
-    def test_installed_skill_is_blocked_by_default(self):
-        d = self.classify(body(text=f"@{BOT} /google-workspace do X"))
-        self.assertEqual(d.outcome, HANDLE_SKILL_COMMAND_BLOCKED)
-        self.assertEqual(d.skill_command_name, "google-workspace")
-        self.assertTrue(d.should_handle)
-        self.assertEqual(d.http_status, 200)
-
-    def test_explicitly_allowed_skill_reaches_the_model(self):
-        d = self.classify(
-            body(text=f"@{BOT} /google-workspace do X"),
-            env={"ROCKETCHAT_ALLOW_SKILL_GOOGLE_WORKSPACE": "true"},
-        )
-        self.assertEqual(d.outcome, HANDLE_MESSAGE)
-
-    def test_uninstalled_skill_name_is_not_blocked(self):
-        # Not a real, currently-installed skill - forwarding it is harmless,
-        # same reasoning as the builtin-command guard's unknown-word case.
-        d = self.classify(body(text=f"@{BOT} /nosuchskill something"))
-        self.assertEqual(d.outcome, HANDLE_MESSAGE)
-
-    def test_no_guard_injected_falls_through_unchanged(self):
-        d = classify_inbound(
-            body(text=f"@{BOT} /google-workspace do X"),
-            bot_username=BOT,
-            bot_user_id=BOT_UID,
-        )
-        self.assertEqual(d.outcome, HANDLE_MESSAGE)
-
-    def test_builtin_and_skill_guards_do_not_shadow_each_other(self):
-        # A real builtin command must still be caught even when the skill
-        # guard is also injected (and vice versa) - the two checks are
-        # independent, not a single merged allowlist.
-        d = self.classify(
-            body(text=f"@{BOT} /yolo on"),
-            blocked_builtin_command=lambda text: blocked_builtin_command(
-                text, DEFAULT_ALLOWED_BUILTIN_COMMANDS
-            ),
-        )
-        self.assertEqual(d.outcome, HANDLE_BUILTIN_COMMAND_BLOCKED)
-
-
 
 
 class TestClassifyInboundThread(unittest.TestCase):
@@ -513,7 +429,7 @@ class TestClassifyInboundThread(unittest.TestCase):
         d = self.classify(
             body(text=f"@{BOT} /model x", tmid="root-1"),
             blocked_builtin_command=lambda text: blocked_builtin_command(
-                text, DEFAULT_ALLOWED_BUILTIN_COMMANDS
+                text, DEFAULT_ALLOWED_BUILTIN_COMMANDS, {}
             ),
         )
         self.assertEqual(d.outcome, HANDLE_BUILTIN_COMMAND_BLOCKED)
@@ -538,7 +454,7 @@ class TestRemovedHistoryCommand(unittest.TestCase):
         d = self.classify(
             "/history status",
             blocked_builtin_command=lambda text: blocked_builtin_command(
-                text, DEFAULT_ALLOWED_BUILTIN_COMMANDS
+                text, DEFAULT_ALLOWED_BUILTIN_COMMANDS, {}
             ),
         )
         self.assertEqual(d.outcome, HANDLE_BUILTIN_COMMAND_BLOCKED)

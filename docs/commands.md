@@ -8,16 +8,18 @@
 
 ## Hermes commands: default deny
 
-Hermes's admin gating (`allow_admin_from`) is off by default, so without a guard anyone mentioning the bot could run `/model`, `/yolo on` or `/restart` with full Hermes privileges. The plugin blocks every `/word` the **installed** Hermes resolves as a command: its registry with all aliases, plugin commands, skill bundles and the operator's `quick_commands`.
+Hermes's admin gating (`allow_admin_from`) is off by default, so without a guard anyone mentioning the bot could run `/model`, `/yolo on` or `/restart` with full Hermes privileges. The plugin refuses **every `/word` that is not on its allowlist**, without asking Hermes what counts as a command. So a command, alias, plugin command, skill or quick command added later is refused from day one, and no Hermes change can open the guard.
 
-A blocked command gets a reply naming the key that would allow it. Text Hermes does not know as a command passes through.
+A refused word gets a reply naming the key that would allow it, with no model call. That includes text such as `/api returns 500, why?`, so the reply also says to resend it without the leading slash. A word containing another slash (`/etc/hosts`) is a path, not a command, and goes to the model.
+
+As a second layer, a turn that Hermes itself would parse as a non-allowed command is marked `allow_gateway_control=False`, so any difference between the two parsers leaves the text as conversation.
 
 **Allowed by default:**
 
 | Command | Why |
 |---|---|
 | `/new`, `/reset` | Start a new session; rooms use per-person sessions |
-| `/approve`, `/deny` | Answer a pending prompt once |
+| `/approve`, `/deny`, `/cancel` | Answer a pending prompt once |
 | `/stop` | Stops only the sender's own run |
 | `/btw`, `/context` | Read-only, about the sender's own session |
 
@@ -28,11 +30,9 @@ ROCKETCHAT_ALLOW_BUILTIN_STATUS=true
 ROCKETCHAT_ALLOW_BUILTIN_RESET=false
 ```
 
-Use the canonical name with hyphens as underscores (`ROCKETCHAT_ALLOW_BUILTIN_RELOAD_MCP`). A key that matches no command logs a warning at startup.
+Use the name with hyphens as underscores (`ROCKETCHAT_ALLOW_BUILTIN_RELOAD_MCP`). Common aliases follow their command (`/hb` follows `HEARTBEAT`). An alias the plugin does not list stays refused until it gets its own key, and a mistyped key leaves the command refused.
 
 **Presets:** `ROCKETCHAT_ALLOW_BUILTIN_PRESET=personal` adds session management, `/model`, `/bg`, `/sethome`, `/goal` and similar commands for a bot that answers one owner. It does not belong on a shared bot, where anyone could switch the model or browse sessions. `/yolo`, `/restart`, `/update`, `/approvals`, `/pause`, `/learn`, `/debug` and `/platform` are in no preset.
-
-**If the registry cannot be imported,** the guard fails closed: every `/word` that is neither allowed nor an installed skill is blocked, and one warning is logged.
 
 ## Approving a dangerous command
 
@@ -42,6 +42,10 @@ A button sends `@bot /approve` or `@bot /deny` as the person who clicked it, the
 
 Only choices the guard would allow get a button, so "always" is not offered unless `ROCKETCHAT_ALLOW_BUILTIN_ALWAYS=true`. `ROCKETCHAT_APPROVAL_BUTTONS=false` returns to Hermes's plain-text prompt.
 
+## Confirming `/new`
+
+Hermes asks for confirmation before `/new` and similar commands. The prompt carries **Approve Once** and **Cancel** buttons that work the same way, and typed `/approve` and `/cancel` always work too. "Always Approve" gets a button only with `ROCKETCHAT_ALLOW_BUILTIN_ALWAYS=true`. `ROCKETCHAT_APPROVAL_BUTTONS=false` returns to Hermes's plain-text prompt.
+
 ## Persistent approval
 
 Answering a confirmation with "always", `/always`, `/remember` or `/approve always|session|permanent` writes to the gateway's whole `config.yaml`, so one room member would change it for everyone. These are refused unless `ROCKETCHAT_ALLOW_BUILTIN_ALWAYS=true`. A one-off `/approve` and `/deny` pass.
@@ -50,7 +54,7 @@ The plain-text check covers Hermes's English words. If you set `display.language
 
 ## Skills
 
-Installed skills (`/google-workspace`) use a separate Hermes registry with no admin check. They have their own allowlist with no defaults: `ROCKETCHAT_ALLOW_SKILL_<NAME>=true`.
+Skills (`/google-workspace`) are refused like any other word, and have their own allowlist with no defaults: `ROCKETCHAT_ALLOW_SKILL_<NAME>=true`. This matters because Hermes applies no admin check to skills.
 
 ## Second line of defence
 

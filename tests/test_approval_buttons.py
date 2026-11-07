@@ -6,7 +6,7 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from approval_buttons import approval_attachments, is_approval_answer  # noqa: E402
+from approval_buttons import approval_attachments, confirm_attachments, confirm_body, is_approval_answer  # noqa: E402
 
 ACTIONS = [("Allow once", "once", "primary"), ("Allow session", "session", ""),
            ("Always", "always", ""), ("Deny", "deny", "danger")]
@@ -48,6 +48,35 @@ class IsApprovalAnswerTests(unittest.TestCase):
     def test_other_text(self):
         for text in ("", "approve", "please /approve", "/approved", "/new"):
             self.assertFalse(is_approval_answer(text), text)
+
+
+class ConfirmAttachmentTests(unittest.TestCase):
+    def _buttons(self, allowed):
+        return [(b["text"], b["msg"]) for b in confirm_attachments("hermes", frozenset(allowed))[0]["actions"]]
+
+    def test_always_gets_no_button_by_default(self):
+        self.assertEqual(self._buttons({"approve", "deny", "cancel"}),
+                         [("Approve Once", "@hermes /approve"), ("Cancel", "@hermes /cancel")])
+
+    def test_always_gets_a_button_when_allowed(self):
+        self.assertIn(("Always Approve", "@hermes /always"), self._buttons({"approve", "cancel", "always"}))
+
+    def test_nothing_allowed_means_no_attachment(self):
+        self.assertEqual(confirm_attachments("hermes", frozenset()), [])
+
+
+class ConfirmBodyTests(unittest.TestCase):
+    PROMPT = ("⚠️ **Confirm /new**\n\nThis starts a fresh session.\n\nChoose:\n• **Approve Once** — proceed\n"
+              "• **Always Approve** — silence\n• **Cancel** — keep\n\n_Text fallback: reply `/approve`._")
+
+    def test_the_typed_answers_are_cut(self):
+        self.assertEqual(confirm_body(self.PROMPT), "⚠️ **Confirm /new**\n\nThis starts a fresh session.")
+
+    def test_another_language_stays_whole(self):
+        self.assertEqual(confirm_body("Bestätigen?\n\nWählen: ..."), "Bestätigen?\n\nWählen: ...")
+
+    def test_a_cancel_is_an_answer(self):
+        self.assertTrue(is_approval_answer("/cancel"))
 
 
 if __name__ == "__main__":

@@ -68,7 +68,6 @@ IGNORE_SENDER = "ignore_sender"          # 200 — sender on ROCKETCHAT_IGNORE_S
 HANDLE_DM_ONLY_NOTICE = "handle_dm_only_notice"  # 200 — ROCKETCHAT_DM_ONLY: a room mention, no agent turn
 HANDLE_WHOAMI = "handle_whoami"          # 200 — identity-resolution report, no agent turn
 HANDLE_BUILTIN_COMMAND_BLOCKED = "handle_builtin_command_blocked"  # 200 — recognised Hermes command, not on the allowlist, no agent turn
-HANDLE_SKILL_COMMAND_BLOCKED = "handle_skill_command_blocked"  # 200 — recognised Hermes skill, not on the allowlist, no agent turn
 HANDLE_MESSAGE = "handle_message"        # 200 — run an agent turn
 
 # The short machine-readable reason strings sent back in the HTTP body. Kept
@@ -86,7 +85,6 @@ _REASONS = {
     HANDLE_DM_ONLY_NOTICE: "dm_only",
     HANDLE_WHOAMI: "whoami",
     HANDLE_BUILTIN_COMMAND_BLOCKED: "builtin_command_blocked",
-    HANDLE_SKILL_COMMAND_BLOCKED: "skill_command_blocked",
     HANDLE_MESSAGE: "accepted",
 }
 
@@ -117,11 +115,6 @@ class InboundDecision:
     # Hermes command word (without the leading "/"), so the caller can name
     # it in the reply without re-parsing ``text``.
     builtin_command_name: str = ""
-    # Populated only for HANDLE_SKILL_COMMAND_BLOCKED - the recognised
-    # Hermes skill slug (without the leading "/"), same reasoning as
-    # builtin_command_name above but for the separate skill-command gap
-    # (see builtin_commands.py's module docstring).
-    skill_command_name: str = ""
 
     @property
     def reason(self) -> str:
@@ -137,7 +130,6 @@ class InboundDecision:
             HANDLE_DM_ONLY_NOTICE,
             HANDLE_WHOAMI,
             HANDLE_BUILTIN_COMMAND_BLOCKED,
-            HANDLE_SKILL_COMMAND_BLOCKED,
             HANDLE_MESSAGE,
         )
 
@@ -332,7 +324,6 @@ def classify_inbound(
     is_duplicate: Optional[Callable[[str], bool]] = None,
     is_whoami_command: Optional[Callable[[str, str], bool]] = None,
     blocked_builtin_command: Optional[Callable[[str], str]] = None,
-    blocked_skill_command: Optional[Callable[[str], str]] = None,
     max_message_age_seconds: Optional[float] = None,
     now_fn: Callable[[], float] = time.time,
 ) -> InboundDecision:
@@ -371,7 +362,6 @@ def classify_inbound(
         text: str = "",
         *,
         builtin_command_name: str = "",
-        skill_command_name: str = "",
     ) -> InboundDecision:
         return InboundDecision(
             outcome,
@@ -385,7 +375,6 @@ def classify_inbound(
             thread_id=thread_id,
             is_direct=is_direct,
             builtin_command_name=builtin_command_name,
-            skill_command_name=skill_command_name,
         )
 
     # Before the dedup, so the bot's own posts never occupy cache entries.
@@ -464,21 +453,6 @@ def classify_inbound(
                 HANDLE_BUILTIN_COMMAND_BLOCKED,
                 text=text,
                 builtin_command_name=command_name,
-            )
-
-    # SAME reasoning/position as the builtin-command check above, but for
-    # the SEPARATE skill-command registry (see builtin_commands.py's module
-    # docstring: skill commands are dispatched via a completely different
-    # mechanism that Hermes' own admin gate never checks either, so this is
-    # not redundant with the check above - a skill is not in Hermes'
-    # COMMAND_REGISTRY, so the check above lets it through to here).
-    if blocked_skill_command is not None:
-        skill_name = blocked_skill_command(text)
-        if skill_name:
-            return decision(
-                HANDLE_SKILL_COMMAND_BLOCKED,
-                text=text,
-                skill_command_name=skill_name,
             )
 
     return decision(HANDLE_MESSAGE, text=text)

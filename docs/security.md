@@ -6,7 +6,7 @@ Rocket.Chat authorises every API call as the bot, not as the person who asked. T
 
 | Risk | Control |
 |---|---|
-| Anyone runs privileged Hermes commands | [Default-deny command guard](commands.md), fails closed |
+| Anyone runs privileged Hermes commands | [Default-deny command guard](commands.md) |
 | One member changes approvals for everyone | Persistent approval refused |
 | Bot pulled into a channel by a mention | Only rooms it is a member of |
 | Bots answering each other forever | `ROCKETCHAT_IGNORE_SENDERS`; own messages filtered |

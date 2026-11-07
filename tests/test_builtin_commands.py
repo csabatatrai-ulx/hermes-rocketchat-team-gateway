@@ -14,44 +14,12 @@ from builtin_commands import (  # noqa: E402
     allowed_builtin_commands,
     blocked_builtin_command,
     blocked_persistent_approval,
-    blocked_skill_command,
-    canonical_builtin_command_name,
     command_allowlist_key,
+    is_command_allowed,
     is_skill_command_allowed,
-    make_hermes_command_resolver,
     parse_builtin_command_name,
-    unknown_allowed_commands,
 )
 from _adapter_test_support import HERMES_AGENT_AVAILABLE, SKIP_REASON  # noqa: E402
-
-
-class _FakeCommandDef:
-    def __init__(self, name, aliases=()):
-        self.name = name
-        self.aliases = tuple(aliases)
-
-
-# A small registry imitating Hermes for the tests without Hermes, with the two most
-# serious commands an allowlist must catch.
-_FAKE_REGISTRY = [
-    _FakeCommandDef("new", ("reset",)),
-    _FakeCommandDef("approve"),
-    _FakeCommandDef("approvals"),
-    _FakeCommandDef("pause"),
-    _FakeCommandDef("heartbeat", ("hb",)),
-    _FakeCommandDef("branch", ("fork",)),
-    _FakeCommandDef("reload-mcp", ("reload_mcp",)),
-    _FakeCommandDef("sethome", ("set-home",)),
-    _FakeCommandDef("yolo"),
-    _FakeCommandDef("status"),
-]
-_FAKE_LOOKUP = {k: c for c in _FAKE_REGISTRY for k in (c.name, *c.aliases)}
-
-
-def _fake_resolver(**kwargs):
-    return make_hermes_command_resolver(
-        lambda name: _FAKE_LOOKUP.get(name.lower().lstrip("/")), **kwargs
-    )
 
 
 class TestParseBuiltinCommandName(unittest.TestCase):
@@ -156,8 +124,8 @@ class TestStopAllowedByDefault(unittest.TestCase):
     def test_stop_can_still_be_switched_off(self):
         self.assertNotIn("stop", allowed_builtin_commands({"ROCKETCHAT_ALLOW_BUILTIN_STOP": "false"}))
 
-    def test_stop_passes_the_fail_closed_guard(self):
-        self.assertEqual(blocked_builtin_command("/stop", DEFAULT_ALLOWED_BUILTIN_COMMANDS), "")
+    def test_stop_passes_the_guard(self):
+        self.assertEqual(blocked_builtin_command("/stop", DEFAULT_ALLOWED_BUILTIN_COMMANDS, {}), "")
 
 
 class TestBlockedPersistentApproval(unittest.TestCase):
@@ -252,46 +220,48 @@ class TestAllowedBuiltinCommands(unittest.TestCase):
             self.assertTrue(name)
 
 
-class TestBlockedBuiltinCommandWithRegistry(unittest.TestCase):
-    """Default deny: EVERYTHING Hermes knows as a command."""
+class TestBlockedBuiltinCommand(unittest.TestCase):
+    """Default deny: every /word that is not allowed, known to Hermes or not."""
 
-    def block(self, text, allowed=DEFAULT_ALLOWED_BUILTIN_COMMANDS, **kwargs):
-        return blocked_builtin_command(
-            text, allowed, resolve_command=_fake_resolver(**kwargs)
-        )
+    def block(self, text, allowed=DEFAULT_ALLOWED_BUILTIN_COMMANDS, env=None):
+        return blocked_builtin_command(text, allowed, env or {})
 
     def test_allowed_defaults_pass(self):
-        for text in ("/new", "/reset", "/approve"):
+        for text in ("/new", "/reset", "/approve", "/deny", "/cancel", "/stop", "/btw x", "/context"):
             with self.subTest(text=text):
                 self.assertEqual(self.block(text), "")
 
-    def test_commands_missing_from_the_old_static_list_are_blocked(self):
-        # Commands a static list would miss.
-        self.assertEqual(self.block("/approvals off"), "approvals")
-        self.assertEqual(self.block("/pause"), "pause")
-        self.assertEqual(self.block("/hb"), "heartbeat")
+    def test_every_other_word_is_blocked(self):
+        for text, expected in (
+            ("/approvals off", "approvals"),
+            ("/pause", "pause"),
+            ("/yolo on", "yolo"),
+            ("/YOLO on", "yolo"),
+            ("/yolo@hermes on", "yolo"),
+            ("/nosuchcommand", "nosuchcommand"),
+            ("/plugin_cmd", "plugin_cmd"),
+            ("/my-bundle", "my_bundle"),
+            ("/deploy", "deploy"),
+            ("/google-workspace do X", "google_workspace"),
+        ):
+            with self.subTest(text=text):
+                self.assertEqual(self.block(text), expected)
 
-    def test_disallowed_known_command_is_blocked(self):
-        self.assertEqual(self.block("/yolo on", frozenset()), "yolo")
-
-    def test_bot_suffix_does_not_bypass_the_guard(self):
-        self.assertEqual(self.block("/yolo@hermes on"), "yolo")
-
-    def test_unknown_word_passes(self):
-        # Hermes does not know it as a command: Hermes gives its own "unknown command"
-        # answer, nothing runs.
-        self.assertEqual(self.block("/nosuchcommand"), "")
+    def test_an_empty_allowlist_blocks_the_defaults_too(self):
+        self.assertEqual(self.block("/new", frozenset()), "new")
 
     def test_non_command_text_is_not_blocked(self):
         self.assertEqual(self.block("what's new?"), "")
+        self.assertEqual(self.block("/usr/share/doc read it"), "")
 
-    def test_aliases_map_to_the_canonical_key(self):
+    def test_aliases_map_to_their_key(self):
         self.assertEqual(self.block("/fork"), "branch")
         self.assertEqual(self.block("/set-home"), "sethome")
         self.assertEqual(self.block("/reload-mcp"), "reload_mcp")
         self.assertEqual(self.block("/reload_mcp"), "reload_mcp")
+        self.assertEqual(self.block("/hb"), "heartbeat")
 
-    def test_alias_follows_its_canonical_allow_setting(self):
+    def test_alias_follows_its_command(self):
         allowed = allowed_builtin_commands({"ROCKETCHAT_ALLOW_BUILTIN_HEARTBEAT": "true"})
         self.assertEqual(self.block("/hb", allowed), "")
         self.assertEqual(self.block("/heartbeat", allowed), "")
@@ -301,90 +271,43 @@ class TestBlockedBuiltinCommandWithRegistry(unittest.TestCase):
         self.assertEqual(self.block("/reset", allowed), "reset")
         self.assertEqual(self.block("/new", allowed), "")
 
-    def test_a_command_not_documented_here_can_still_be_allowed(self):
-        allowed = allowed_builtin_commands({"ROCKETCHAT_ALLOW_BUILTIN_PAUSE": "true"})
-        self.assertEqual(self.block("/pause", allowed), "")
+    def test_any_word_can_be_allowed_by_its_own_key(self):
+        allowed = allowed_builtin_commands({"ROCKETCHAT_ALLOW_BUILTIN_DEPLOY": "true"})
+        self.assertEqual(self.block("/deploy", allowed), "")
 
-    def test_plugin_bundle_and_quick_commands_are_commands_too(self):
-        kwargs = dict(
-            is_gateway_known_command=lambda name: name == "plugin-cmd",
-            resolve_bundle_command_key=lambda name: "/b" if name == "my-bundle" else None,
-            quick_command_names=lambda: {"deploy": {"type": "exec"}},
-        )
-        self.assertEqual(self.block("/plugin_cmd", **kwargs), "plugin_cmd")
-        self.assertEqual(self.block("/my-bundle", **kwargs), "my_bundle")
-        self.assertEqual(self.block("/deploy", **kwargs), "deploy")
-        self.assertEqual(self.block("/semmi", **kwargs), "")
-
-    def test_a_failing_resolver_fails_closed(self):
-        def boom(_word):
-            raise RuntimeError("hermes refactor")
-
-        with self.assertLogs("builtin_commands", level="WARNING"):
-            self.assertEqual(
-                blocked_builtin_command("/anything", frozenset(), resolve_command=boom),
-                "anything",
-            )
+    def test_a_skill_is_allowed_by_its_skill_key(self):
+        env = {"ROCKETCHAT_ALLOW_SKILL_GOOGLE_WORKSPACE": "true"}
+        self.assertEqual(self.block("/google-workspace do X", env=env), "")
+        self.assertEqual(self.block("/google_workspace do X", env=env), "")
+        self.assertEqual(self.block("/other-skill", env=env), "other_skill")
 
 
-class TestBlockedBuiltinCommandFailClosed(unittest.TestCase):
-    """Without the Hermes registry: every /word not allowed is blocked, except skills."""
+class TestIsCommandAllowed(unittest.TestCase):
+    def test_empty_word_is_not_allowed(self):
+        # Hermes's parser gives no word for a file path: such a turn stays conversational.
+        self.assertFalse(is_command_allowed("", DEFAULT_ALLOWED_BUILTIN_COMMANDS, {}))
 
-    def test_allowed_defaults_pass(self):
-        self.assertEqual(blocked_builtin_command("/new", DEFAULT_ALLOWED_BUILTIN_COMMANDS), "")
-        self.assertEqual(blocked_builtin_command("/reset", DEFAULT_ALLOWED_BUILTIN_COMMANDS), "")
-
-    def test_every_other_word_is_blocked(self):
-        for text, expected in (
-            ("/approvals off", "approvals"),
-            ("/pause", "pause"),
-            ("/nosuchcommand", "nosuchcommand"),
-            ("/yolo@hermes on", "yolo"),
-        ):
-            with self.subTest(text=text):
-                self.assertEqual(
-                    blocked_builtin_command(text, DEFAULT_ALLOWED_BUILTIN_COMMANDS), expected
-                )
-
-    def test_static_aliases_still_map_to_their_key(self):
-        allowed = allowed_builtin_commands({"ROCKETCHAT_ALLOW_BUILTIN_VERSION": "true"})
-        self.assertEqual(blocked_builtin_command("/v", allowed), "")
-        self.assertEqual(blocked_builtin_command("/fork", frozenset()), "branch")
-        self.assertEqual(blocked_builtin_command("/set-home", frozenset()), "sethome")
-
-    def test_installed_skills_are_left_to_the_skill_guard(self):
-        is_skill = lambda word: word == "google-workspace"  # noqa: E731
-        self.assertEqual(
-            blocked_builtin_command("/google-workspace x", frozenset(), is_skill_command=is_skill),
-            "",
-        )
-        self.assertEqual(
-            blocked_builtin_command("/yolo", frozenset(), is_skill_command=is_skill), "yolo"
-        )
-
-    def test_non_command_text_is_not_blocked(self):
-        self.assertEqual(blocked_builtin_command("what's new?", frozenset()), "")
-        self.assertEqual(blocked_builtin_command("/usr/share/doc read it", frozenset()), "")
+    def test_words(self):
+        self.assertTrue(is_command_allowed("new", DEFAULT_ALLOWED_BUILTIN_COMMANDS, {}))
+        self.assertTrue(is_command_allowed("ctx", DEFAULT_ALLOWED_BUILTIN_COMMANDS, {}))
+        self.assertFalse(is_command_allowed("yolo", DEFAULT_ALLOWED_BUILTIN_COMMANDS, {}))
 
 
 class TestCommandAllowlistKey(unittest.TestCase):
     def test_keys(self):
-        self.assertEqual(command_allowlist_key("reset", "new"), "reset")
-        self.assertEqual(command_allowlist_key("hb", "heartbeat"), "heartbeat")
-        self.assertEqual(command_allowlist_key("reload-mcp", "reload-mcp"), "reload_mcp")
+        self.assertEqual(command_allowlist_key("reset"), "reset")
+        self.assertEqual(command_allowlist_key("hb"), "heartbeat")
+        self.assertEqual(command_allowlist_key("reload-mcp"), "reload_mcp")
         self.assertEqual(command_allowlist_key("q"), "queue")
         self.assertEqual(command_allowlist_key("pause"), "pause")
+        self.assertEqual(command_allowlist_key("nosuchcommand"), "nosuchcommand")
 
 
 class TestBuiltinCommandAliases(unittest.TestCase):
-    def test_every_alias_targets_a_guarded_key(self):
-        for alias, target in BUILTIN_COMMAND_ALIASES.items():
+    def test_no_alias_shadows_a_documented_key(self):
+        for alias in BUILTIN_COMMAND_ALIASES:
             with self.subTest(alias=alias):
-                self.assertIn(target, BUILTIN_COMMANDS)
                 self.assertNotIn(alias, BUILTIN_COMMANDS)
-
-    def test_unknown_word_has_no_canonical_name(self):
-        self.assertEqual(canonical_builtin_command_name("nosuchcommand"), "")
 
 
 def _hermes_commands_module():
@@ -402,65 +325,45 @@ def _hermes_commands_module():
 
 
 class TestAgainstHermesRegistry(unittest.TestCase):
-    """Drift guard against the real Hermes: every name and alias of every chat-reachable command (not cli_only, or
-    gateway-reachable through a config gate) is blocked or explicitly allowed, so a new command from a Hermes upgrade
-    cannot stay silently unguarded.
+    """Against the real Hermes (tests only; the plugin itself does not import this): every name and alias of
+    every command is blocked unless deliberately allowed, and the alias table agrees with Hermes.
     """
 
-    def test_every_chat_reachable_command_is_blocked_or_allowlisted(self):
+    def test_every_form_of_every_command_is_blocked_or_allowlisted(self):
         commands = _hermes_commands_module()
         if commands is None:
             self.skipTest("hermes_cli.commands not importable (set HERMES_AGENT_PATH)")
-        resolver = make_hermes_command_resolver(
-            commands.resolve_command,
-            is_gateway_known_command=commands.is_gateway_known_command,
-        )
         checked = 0
         for cmd in commands.COMMAND_REGISTRY:
-            if cmd.cli_only and not cmd.gateway_config_gate:
-                continue
             for form in (cmd.name, *cmd.aliases):
                 checked += 1
                 with self.subTest(command=cmd.name, form=form):
-                    blocked = blocked_builtin_command(
-                        f"/{form} x", DEFAULT_ALLOWED_BUILTIN_COMMANDS, resolve_command=resolver
-                    )
-                    key = command_allowlist_key(form, cmd.name)
-                    if key in DEFAULT_ALLOWED_BUILTIN_COMMANDS:
-                        self.assertEqual(blocked, "")
-                    else:
-                        self.assertEqual(blocked, key)
+                    key = command_allowlist_key(form)
+                    blocked = blocked_builtin_command(f"/{form} x", DEFAULT_ALLOWED_BUILTIN_COMMANDS, {})
+                    self.assertEqual(blocked, "" if key in DEFAULT_ALLOWED_BUILTIN_COMMANDS else key)
         self.assertGreater(checked, 60)
 
-    def test_the_audit_findings_are_blocked_by_default(self):
+    def test_an_allowlisted_form_belongs_to_an_allowlisted_command(self):
+        # An alias must not open a different command than the key suggests.
         commands = _hermes_commands_module()
         if commands is None:
             self.skipTest("hermes_cli.commands not importable (set HERMES_AGENT_PATH)")
-        resolver = make_hermes_command_resolver(commands.resolve_command)
-        # /btw and /context (/ctx) are on by default on purpose (they only read, about
-        # one's own session); the point is that everything else stays blocked by
-        # default.
-        for word in ("approvals", "pause", "save", "bg", "heartbeat", "hb",
-                     "refine", "review", "loop", "proactive", "plan", "egress",
-                     "diff", "busy", "init", "topup"):
-            with self.subTest(word=word):
-                if commands.resolve_command(word) is None:
-                    self.skipTest(f"/{word} is not in this Hermes version")
-                self.assertTrue(
-                    blocked_builtin_command(
-                        f"/{word}", DEFAULT_ALLOWED_BUILTIN_COMMANDS, resolve_command=resolver
-                    )
-                )
+        for cmd in commands.COMMAND_REGISTRY:
+            for form in (cmd.name, *cmd.aliases):
+                if command_allowlist_key(form) in DEFAULT_ALLOWED_BUILTIN_COMMANDS:
+                    with self.subTest(form=form):
+                        self.assertIn(cmd.name, DEFAULT_ALLOWED_BUILTIN_COMMANDS | {"new"})
 
-
-def _resolver(known):
-    """A fake resolve_skill_command_key: recognises names in ``known``."""
-
-    def _resolve(name):
-        key = f"/{name}"
-        return key if key in known else None
-
-    return _resolve
+    def test_the_alias_table_matches_hermes(self):
+        commands = _hermes_commands_module()
+        if commands is None:
+            self.skipTest("hermes_cli.commands not importable (set HERMES_AGENT_PATH)")
+        for alias, target in BUILTIN_COMMAND_ALIASES.items():
+            cmd = commands.resolve_command(alias) or commands.resolve_command(alias.replace("_", "-"))
+            if cmd is None:
+                continue  # an alias another Hermes version has; it only names a key
+            with self.subTest(alias=alias):
+                self.assertEqual(cmd.name.replace("-", "_"), target)
 
 
 class TestIsSkillCommandAllowed(unittest.TestCase):
@@ -493,49 +396,6 @@ class TestIsSkillCommandAllowed(unittest.TestCase):
         )
 
 
-class TestBlockedSkillCommand(unittest.TestCase):
-    def test_installed_but_not_allowed_skill_is_blocked(self):
-        resolver = _resolver({"/google-workspace"})
-        self.assertEqual(
-            blocked_skill_command(
-                "/google-workspace do X", {}, resolve_skill_command_key=resolver
-            ),
-            "google-workspace",
-        )
-
-    def test_installed_and_allowed_skill_is_not_blocked(self):
-        resolver = _resolver({"/google-workspace"})
-        env = {"ROCKETCHAT_ALLOW_SKILL_GOOGLE_WORKSPACE": "true"}
-        self.assertEqual(
-            blocked_skill_command("/google-workspace do X", env, resolve_skill_command_key=resolver),
-            "",
-        )
-
-    def test_word_that_is_not_an_installed_skill_is_not_blocked(self):
-        # Not a real skill - blocking it would be a false positive, same
-        # reasoning as blocked_builtin_command's unknown-word case.
-        resolver = _resolver({"/google-workspace"})
-        self.assertEqual(
-            blocked_skill_command("/nosuchskill", {}, resolve_skill_command_key=resolver), ""
-        )
-
-    def test_non_command_text_is_not_blocked(self):
-        resolver = _resolver({"/google-workspace"})
-        self.assertEqual(
-            blocked_skill_command("what's new?", {}, resolve_skill_command_key=resolver), ""
-        )
-
-    def test_no_resolver_injected_means_no_op(self):
-        # e.g. this plugin's own standalone unit tests, or a Hermes install
-        # where the internal module could not be imported (adapter.py logs
-        # a warning in that case - see its __init__) - this function itself
-        # must not raise or silently pretend to have checked anything.
-        self.assertEqual(
-            blocked_skill_command("/google-workspace do X", {}, resolve_skill_command_key=None),
-            "",
-        )
-
-
 if __name__ == "__main__":
     unittest.main()
 
@@ -544,7 +404,7 @@ if __name__ == "__main__":
 class TestPresetNamesAreHermesCommands(unittest.TestCase):
     """A preset name must be the canonical name of an installed Hermes command (a renamed key would leave the command silently blocked)."""
 
-    PLUGIN_ONLY = {"always"}  # persistent approval has its own guard; it is not a Hermes command
+    PLUGIN_ONLY = {"always", "cancel"}  # answers to a prompt, parsed apart from the command registry
 
     def test_every_preset_name_is_a_canonical_hermes_command(self):
         from hermes_cli.commands import resolve_command
@@ -556,19 +416,3 @@ class TestPresetNamesAreHermesCommands(unittest.TestCase):
                 canonical = command.name.replace("-", "_")
                 self.assertTrue(name == canonical or name in {a.replace("-", "_") for a in command.aliases},
                                 f"{name}: a Hermes neve {command.name}")
-
-
-class TestUnknownAllowedCommands(unittest.TestCase):
-    """A renamed or mistyped allowed name warns at startup instead of silently blocking."""
-
-    @staticmethod
-    def resolve(word):
-        return {"bg": "bg", "new": "new", "reset": "new", "reload-mcp": "reload-mcp"}.get(word.replace("_", "-"))
-
-    def test_names_hermes_does_not_know_are_reported(self):
-        allowed = frozenset({"bg", "background", "new", "reset", "reload_mcp", "always", "modle"})
-        self.assertEqual(unknown_allowed_commands(allowed, self.resolve), ("background", "modle"))
-
-    def test_without_a_resolver_nothing_is_reported(self):
-        # fail-closed mode: loading the resolver has already warned about that
-        self.assertEqual(unknown_allowed_commands(frozenset({"background"}), None), ())

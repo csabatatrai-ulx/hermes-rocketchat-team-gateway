@@ -23,23 +23,12 @@ import logging
 import os
 from typing import Any, Optional
 
-# Hermes's skill-command resolver: skills are a separate registry from COMMAND_REGISTRY (see the
-# docstring of builtin_commands.py, which stays free of Hermes imports and gets this injected).
-# The only import of it in the plugin. A guarded import: a future Hermes refactor may move or
-# rename this module. That must not break the whole adapter, but it must be loud: adapter.py logs
-# a warning at startup when this is None.
-try:
-    from agent.skill_commands import resolve_skill_command_key as _resolve_skill_command_key
-except ImportError:  # pragma: no cover - defensive, see comment above
-    _resolve_skill_command_key = None
-
 from .builtin_commands import (
     PERSISTENT_APPROVAL_KEY,
-    CommandResolver,
     blocked_builtin_command,
+    is_command_allowed,
+    parse_builtin_command_name,
     blocked_persistent_approval,
-    blocked_skill_command,
-    make_hermes_command_resolver,
 )
 from .dm_session import (
     bot_replied_since,
@@ -64,7 +53,6 @@ from .inbound import (
     HANDLE_BUILTIN_COMMAND_BLOCKED,
     HANDLE_DM_ONLY_NOTICE,
     HANDLE_MESSAGE,
-    HANDLE_SKILL_COMMAND_BLOCKED,
     HANDLE_WHOAMI,
     IGNORE_DUPLICATE,
     IGNORE_NOT_ALLOWED,
@@ -99,64 +87,6 @@ from .whoami import is_whoami_command
 from gateway.platforms.event import MessageEvent, MessageType
 
 logger = logging.getLogger(__name__)
-
-# The installed Hermes's command resolver (hermes_command_resolver, below), loaded
-# lazily once; ``None`` if the Hermes registry cannot be imported (then the guard fails
-# closed and warns once). The list is a "not loaded yet" marker, because ``None`` itself
-# is a valid result.
-_HERMES_COMMAND_RESOLVER: list = []
-
-
-def hermes_command_resolver() -> Optional[CommandResolver]:
-    """The installed Hermes's command resolver, or ``None`` (with a warning) if ``hermes_cli.commands`` cannot be imported;
-    then ``builtin_commands.blocked_builtin_command`` runs fail-closed.
-
-    The Hermes imports happen here, lazily and defensively (``builtin_commands.py`` stays free of Hermes imports); a missing
-    bundle or quick-command resolver only narrows the scope and does not disable the guard.
-    """
-    try:
-        from hermes_cli.commands import is_gateway_known_command, resolve_command
-    except Exception:  # noqa: BLE001 - any import failure: fail closed
-        logger.warning(
-            "Rocket.Chat: could not import hermes_cli.commands - the built-in command "
-            "guard runs FAIL-CLOSED: every /word message that is not allowlisted "
-            "(ROCKETCHAT_ALLOW_BUILTIN_<NAME>) and not an installed skill is blocked. "
-            "Hermes' internal module layout changed - re-check the import path."
-        )
-        return None
-    try:
-        from agent.skill_bundles import resolve_bundle_command_key
-    except Exception:  # noqa: BLE001
-        resolve_bundle_command_key = None
-    try:
-        from hermes_cli.config import read_raw_config_readonly
-    except Exception:  # noqa: BLE001
-        read_raw_config_readonly = None
-
-    def _quick_command_names() -> Any:
-        if read_raw_config_readonly is None:
-            return ()
-        qc = (read_raw_config_readonly() or {}).get("quick_commands")
-        return qc if isinstance(qc, dict) else ()
-
-    return make_hermes_command_resolver(
-        resolve_command,
-        is_gateway_known_command=is_gateway_known_command,
-        resolve_bundle_command_key=resolve_bundle_command_key,
-        quick_command_names=_quick_command_names,
-    )
-
-
-def _hermes_command_resolver() -> Optional[CommandResolver]:
-    """The cached :func:`hermes_command_resolver` (so the warning goes out once)."""
-    if not _HERMES_COMMAND_RESOLVER:
-        _HERMES_COMMAND_RESOLVER.append(hermes_command_resolver())
-    return _HERMES_COMMAND_RESOLVER[0]
-
-
-def _is_installed_skill(word: str) -> bool:
-    return _resolve_skill_command_key is not None and _resolve_skill_command_key(word) is not None
-
 
 def log_ignored_delivery(decision: InboundDecision) -> None:
     """Log a delivery dropped without a turn (both the webhook and DDP paths call this).
@@ -313,15 +243,7 @@ class WebhookInboundMixin:
             is_whoami_command=lambda text, command: is_whoami_command(text, command=command),
             blocked_builtin_command=lambda text: blocked_persistent_approval(
                 text, self._cfg.allowed_builtin_commands
-            ) or blocked_builtin_command(
-                text,
-                self._cfg.allowed_builtin_commands,
-                resolve_command=_hermes_command_resolver(),
-                is_skill_command=_is_installed_skill,
-            ),
-            blocked_skill_command=lambda text: blocked_skill_command(
-                text, ScopedEnv(), resolve_skill_command_key=_resolve_skill_command_key
-            ),
+            ) or blocked_builtin_command(text, self._cfg.allowed_builtin_commands, ScopedEnv()),
         )
 
     async def _dispatch_inbound_decision(self, decision: InboundDecision) -> None:
@@ -366,7 +288,6 @@ class WebhookInboundMixin:
         if decision.outcome == HANDLE_BUILTIN_COMMAND_BLOCKED:
             # Deterministic, no agent turn - see builtin_commands.py for why
             # this exists and how to allow a specific command via .env.
-            builtin_env_name = decision.builtin_command_name.upper().replace("-", "_")
             if decision.builtin_command_name == PERSISTENT_APPROVAL_KEY:
                 # Persistent approval would write to the gateway's whole config, so it
                 # is blocked on a shared bot
@@ -377,28 +298,14 @@ class WebhookInboundMixin:
                     tmid=decision.thread_id,
                 )
                 return
+            typed = parse_builtin_command_name(decision.text) or decision.builtin_command_name
             await self._notify(
                 decision.channel_id,
                 user_text(
                     "builtin_command_blocked",
-                    command=decision.builtin_command_name,
-                    env_key=f"ROCKETCHAT_ALLOW_BUILTIN_{builtin_env_name}",
-                ),
-                tmid=decision.thread_id,
-            )
-            return
-
-        if decision.outcome == HANDLE_SKILL_COMMAND_BLOCKED:
-            # Deterministic, no agent turn. A SEPARATE gap from the builtin-command one
-            # above (see builtin_commands.py: skill commands are a different Hermes
-            # registry).
-            skill_env_name = decision.skill_command_name.upper().replace("-", "_")
-            await self._notify(
-                decision.channel_id,
-                user_text(
-                    "skill_command_blocked",
-                    command=decision.skill_command_name,
-                    env_key=f"ROCKETCHAT_ALLOW_SKILL_{skill_env_name}",
+                    command=typed,
+                    env_key=f"ROCKETCHAT_ALLOW_BUILTIN_{decision.builtin_command_name.upper()}",
+                    skill_env_key=f"ROCKETCHAT_ALLOW_SKILL_{typed.upper().replace('-', '_')}",
                 ),
                 tmid=decision.thread_id,
             )
@@ -771,6 +678,12 @@ class WebhookInboundMixin:
                 media_text_inlined=media.text_inlined,
                 channel_context=channel_context or None,
             )
+            # Second layer behind the guard: whatever Hermes itself would parse as a command that is not
+            # allowed stays conversational (builtin_commands.py).
+            if event.is_command() and not is_command_allowed(
+                event.get_command() or "", self._cfg.allowed_builtin_commands, ScopedEnv()
+            ):
+                event.allow_gateway_control = False
 
             # handle_message() is fire-and-forget internally (spawns
             # background processing and returns before the agent turn

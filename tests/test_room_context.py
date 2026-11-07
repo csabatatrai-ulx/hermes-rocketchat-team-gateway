@@ -294,6 +294,32 @@ class TestChannelContext(_Base):
         self.assertTrue(lines[first - 2].startswith("[2026-10-06 11:59 +02:00] Hermes (you):"))
 
 
+class TestGatewayControlLayer(_Base):
+    """The second layer behind the guard: text Hermes would parse as a non-allowed command stays conversational."""
+
+    def control(self, text):
+        instance = self.instance(_FakeRest())
+        self.run_turn(instance, _payload(text=f"@{BOT} {text}"))
+        return instance.handle_message.await_args.args[0].allow_gateway_control
+
+    def test_plain_text_keeps_control(self):
+        # A plain "yes" must still be able to answer a pending prompt.
+        self.assertTrue(self.control("What's the status?"))
+
+    def test_an_allowed_command_keeps_control(self):
+        self.assertTrue(self.control("/approve"))
+        self.assertTrue(self.control("/cancel"))
+
+    def test_a_path_is_conversation(self):
+        self.assertFalse(self.control("/etc/hosts what is this?"))
+
+    def test_a_command_behind_an_attachment_ref_is_never_a_command_for_hermes(self):
+        # The guard's parser does not see it; Hermes's parser does on newer versions.
+        instance = self.instance(_FakeRest())
+        self.run_turn(instance, _payload(text=f"@{BOT} @image:/tmp/a.png /yolo on"))
+        self.assertFalse(instance.handle_message.await_args.args[0].is_command())
+
+
 class TestSendToChannelToo(_Base):
     """The "Also send to channel" box (``tshow: true``): the thread reply also shows in the main channel but belongs to the thread. Hermes's Slack adapter treats it the same way (``thread_broadcast``)."""
 
