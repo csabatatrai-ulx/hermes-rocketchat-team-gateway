@@ -22,6 +22,7 @@ Rocket.Chat authorises every API call as the bot, not as the person who asked. T
 The adapter cannot set Hermes's configuration. These are yours:
 
 - **Tools.** Without `platform_toolsets.rocketchat`, Hermes gives the platform its whole core toolset. Always set an explicit list on a shared bot.
+- **Approvals.** Hermes's default `approvals.mode: smart` lets a helper model approve flagged commands without asking anyone. Use `manual` on a shared bot.
 - **Memory.** Memory is per Hermes home, so a shared bot shares it among all users unless disabled.
 - **Prompt injection.** Room context is marked as context, but it is still text a model reads. Give the bot only the tools its users may trigger, and keep approvals on for consequential ones.
 

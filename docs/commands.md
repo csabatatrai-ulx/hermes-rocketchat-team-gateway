@@ -36,7 +36,7 @@ Use the canonical name with hyphens as underscores (`ROCKETCHAT_ALLOW_BUILTIN_RE
 
 ## Approving a dangerous command
 
-When the agent wants to run something dangerous, Hermes asks first. The prompt carries **Accept** and **Deny** buttons, and the typed commands always work too.
+When the agent wants to run something dangerous and Hermes's `approvals.mode` calls for a person (see [deployment](deployment.md)), the prompt carries **Accept** and **Deny** buttons, and the typed commands always work too.
 
 A button sends `@bot /approve` or `@bot /deny` as the person who clicked it, the same message they could type. So the same checks apply: the allowlist, the command guard, Hermes's admin lists and the session. In a room, someone else's click reaches their own session, where nothing is pending. In a shared thread any participant can answer, as with the typed command.
 

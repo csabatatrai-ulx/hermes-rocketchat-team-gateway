@@ -2,7 +2,7 @@
 
 ## Tested
 
-The unit suite and a live end-to-end run pass on Hermes 0.22.6 and on the official Hermes 0.23.0 container image, against Rocket.Chat 8.9.1. The live run covers mentions, threads, DMs, group DMs, the command guard, files in both directions, concurrent askers, approval buttons clicked in the web client, a restart and a network outage.
+The unit suite and a live end-to-end run pass on Hermes 0.22.6 and on the official Hermes 0.23.0 container image, against Rocket.Chat 8.9.1. The live run covers mentions, threads, DMs, group DMs, the command guard, files in both directions, concurrent askers, approval buttons clicked in the web client, a restart and a network outage. A short run with a real model (Nous Portal, free tier) covers room context, identity, threads, long answers and approval.
 
 ## Hermes
 

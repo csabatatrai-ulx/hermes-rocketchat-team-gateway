@@ -16,7 +16,7 @@ Supports **Rocket.Chat 8.7 – 9.x** from one code path. Requires **Hermes 0.21.
 **It is safe by default in front of many users.**
 
 - Every Hermes command is blocked over chat unless allowed. A new command in a future Hermes is blocked from day one, and if the command registry cannot be read the guard fails closed. Otherwise anyone in a room could run `/model`, `/yolo` or `/restart`.
-- A dangerous command waits for a click: Accept and Deny buttons appear on the prompt, and each click runs as the authenticated person who made it.
+- With `approvals.mode: manual`, a dangerous command waits for a click: accept and deny buttons appear on the prompt, and each click runs as the authenticated person who made it.
 - Skill commands have their own allowlist, and persistent approvals that would write to the shared config are refused.
 - A bot answers only in rooms it is a member of, so nobody can pull it into a channel with a mention.
 - Lines from senders outside the allowlist are marked `[unverified sender]` in the room context, and a multi-line message cannot forge a context marker.
@@ -61,7 +61,10 @@ Decide who may talk to the bot: `ROCKETCHAT_ALLOWED_USERS`, Hermes pairing, or o
 
 ```bash
 hermes config set platform_toolsets.rocketchat '[my-mcp-server]'   # or [] for none
+hermes config set approvals.mode manual   # a person answers every dangerous command
 ```
+
+Hermes's default `smart` mode lets a helper model approve flagged commands, so no one is asked.
 
 ### 4. Start and check
 

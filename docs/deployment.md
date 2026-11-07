@@ -17,6 +17,8 @@ display:
       long_running_notifications: false   # the typing indicator is the signal
       cleanup_progress: true
       show_reasoning: false
+approvals:
+  mode: manual                            # a person answers every dangerous command, see below
 thread_sessions_per_user: true            # per-person sessions in threads too
 memory:
   memory_enabled: false                   # shared across all users otherwise
@@ -25,6 +27,8 @@ rocketchat:
   group_allow_admin_from: [<admin user id>]
   allow_admin_from: [<admin user id>]
 ```
+
+**Set `approvals.mode: manual` on a shared bot.** Hermes's default, `smart`, lets a helper model approve a flagged command it considers safe, and then no person is asked and no button appears. In testing it approved an `rm -rf` of a directory by itself. Use `smart` only if you accept that decision being made by a model.
 
 For deployment-specific tool guidance, use `platform_hints.rocketchat.append` rather than changing the plugin.
 
