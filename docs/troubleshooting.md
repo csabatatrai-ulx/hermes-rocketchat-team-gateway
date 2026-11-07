@@ -16,4 +16,3 @@ The plugin logs at INFO to Hermes's `agent.log`; the console shows WARNING and a
 | HTTP 429 in the log | The bot lacks `api-bypass-rate-limit`; give it the `bot` role |
 | The quote card is missing | Site URL on the server does not match the address clients use |
 | Files do not upload | Rocket.Chat's upload setting, allowed types or size limit. The reply names the server's reason |
-| "No live adapter for platform" on cron | A cron process separate from the gateway; delivery needs the running gateway |

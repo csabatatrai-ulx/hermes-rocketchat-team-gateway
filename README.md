@@ -44,7 +44,7 @@ hermes plugins install rocketchat-team-gateway --enable
 
 ### 3. Configure
 
-Put the required settings in `~/.hermes/.env` (`chmod 600`). The installer asks for them too.
+Run `hermes gateway setup` and choose Rocket.Chat. The wizard checks the credentials against the server before saving them. Or put the settings in `~/.hermes/.env` (`chmod 600`):
 
 ```dotenv
 ROCKETCHAT_URL=https://chat.example.com

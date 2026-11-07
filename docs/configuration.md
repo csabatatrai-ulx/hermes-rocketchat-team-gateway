@@ -35,7 +35,7 @@ Every setting is a `ROCKETCHAT_*` environment variable, normally in `~/.hermes/.
 
 | Key | Default | Meaning |
 |---|---|---|
-| `ROCKETCHAT_HOME_CHANNEL` | empty | Hermes home channel room ID: target of the greeting and `deliver=rocketchat` cron jobs. `/sethome` writes it |
+| `ROCKETCHAT_HOME_CHANNEL` | empty | Hermes home channel room ID: target of the greeting and `deliver=rocketchat` cron jobs, also from a process separate from the gateway. `/sethome` writes it |
 | `ROCKETCHAT_STARTUP_GREETING` | `true` | Greet the home channel on a cold start |
 | `ROCKETCHAT_REPLY_QUOTE` | `true` | In rooms, quote the question in the first answer message |
 | `ROCKETCHAT_REPLY_MENTION` | `true` | In rooms, mention the asker in the first answer message |

@@ -2,7 +2,7 @@
 
 ## Scope
 
-This plugin is the wire between Hermes and Rocket.Chat, and nothing else. Registering no tools is a design decision, and it matches Hermes's own adapters: of the messaging platforms bundled with Hermes, none registers agent tools. Capabilities such as searching a room or posting elsewhere belong to tools the agent reaches over MCP, where they work from every channel and can be permissioned separately.
+This plugin is the wire between Hermes and Rocket.Chat, and nothing else. Registering no tools is a design decision that matches Hermes's own messaging adapters, none of which registers agent tools. Hermes's platform guide also says plugins "must not register an equivalent model surface that lets the agent initiate outbound messages on its own". Capabilities such as searching a room belong to tools the agent reaches over MCP, where they work from every channel and can be permissioned separately.
 
 ## Message flow
 
@@ -26,6 +26,8 @@ Both inbound paths build the same payload shape and end in the same pure decisio
 | `ddp_transport_mixin.py` | Realtime API connection, reconnect, catch-up | Yes |
 | `webhook_mixin.py` | Webhook listener, shared dispatch, building the turn | Yes |
 | `scoped_env.py` | Profile-scoped environment | Yes |
+| `setup_wizard.py` | `hermes gateway setup` | Yes |
+| `standalone.py` | Delivery from cron without a live adapter | Yes |
 | `inbound.py` | The decision chain, pure | No |
 | `builtin_commands.py` | Command guard | No (resolvers injected) |
 | `history.py`, `room_session.py`, `dm_session.py` | Context windows and boundaries | No |

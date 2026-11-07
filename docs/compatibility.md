@@ -1,5 +1,9 @@
 # Compatibility
 
+## Tested
+
+The unit suite and a live end-to-end run pass on Hermes 0.22.6 against Rocket.Chat 8.9.1. The live run covers mentions, threads, DMs, group DMs, the command guard, files in both directions, concurrent askers, a restart and a network outage.
+
 ## Hermes
 
 `requires_hermes: ">=0.21.6"`. The adapter uses only surfaces listed in Hermes's platform guide, with the exceptions below, which the test suite tracks in `tests/test_hermes_contract.py`.

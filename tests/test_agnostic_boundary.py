@@ -44,7 +44,7 @@ AGNOSTIC_MODULES = [
 # ddp_transport_mixin relies on the BasePlatformAdapter lifecycle contract
 # (``self._set_fatal_error``/``self._notify_fatal_error``) even with no literal
 # "gateway" among its imports.
-_FRAMEWORK_EXEMPT = {"scoped_env.py", 
+_FRAMEWORK_EXEMPT = {"scoped_env.py", "setup_wizard.py", "standalone.py", 
     "adapter.py",
     "__init__.py",
     "webhook_mixin.py",

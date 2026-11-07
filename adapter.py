@@ -67,6 +67,8 @@ from .dedup import (
     OutboundDeduplicator,
 )
 from .scoped_env import ScopedEnv as _ScopedEnv
+from .setup_wizard import interactive_setup
+from .standalone import standalone_send
 from .user_texts import user_text
 from .prompt_guidance import build_platform_hint
 from .whoami import build_whoami_reply, is_whoami_command
@@ -1091,6 +1093,16 @@ def register(ctx) -> None:
             "ROCKETCHAT_BOT_USERNAME",
         ],
         install_hint="pip install aiohttp",
+        setup_fn=interactive_setup,
+        standalone_sender_fn=standalone_send,
+        dashboard_description="Connect Hermes to Rocket.Chat rooms and direct messages.",
+        dashboard_env_vars=(
+            "ROCKETCHAT_URL",
+            "ROCKETCHAT_TOKEN",
+            "ROCKETCHAT_USER_ID",
+            "ROCKETCHAT_BOT_USERNAME",
+            "ROCKETCHAT_ALLOWED_USERS",
+        ),
         allowed_users_env="ROCKETCHAT_ALLOWED_USERS",
         allow_all_env="ROCKETCHAT_ALLOW_ALL_USERS",
         # Hermes's cron ``deliver=rocketchat`` target (and the key ``/sethome`` writes);

@@ -62,7 +62,14 @@ PUBLIC_SURFACE = frozenset({
     "gateway.platforms.base",
     "gateway.platforms.event",
     "gateway.platforms.helpers",
+    "hermes_cli.cli_output",
     "hermes_cli.config",
+    "hermes_cli.gateway_setup_wizard:confirm_reconfigure",
+    "hermes_cli.gateway_setup_wizard:print_setup_header",
+    "hermes_cli.gateway_setup_wizard:prompt_csv",
+    "hermes_cli.gateway_setup_wizard:save_env_values",
+    "hermes_cli.setup:prompt",
+    "hermes_cli.setup:prompt_yes_no",
     "tools.url_safety:is_safe_url",
 })
 
