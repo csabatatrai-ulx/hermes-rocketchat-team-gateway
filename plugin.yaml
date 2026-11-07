@@ -9,7 +9,7 @@ description: >
   asker's previous mention, thread-aware replies, a default-deny guard for
   Hermes commands, restart catch-up and duplicate suppression that survive a
   restart. Supports Rocket.Chat 8.7 - 9.x.
-author: Csaba Tatrai
+author: Csaba A. Tátrai
 license: MIT
 requires_hermes: ">=0.21.6"
 python_dependencies:
