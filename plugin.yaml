@@ -1,0 +1,182 @@
+name: rocketchat-team-gateway
+label: Rocket.Chat Team Gateway
+kind: platform
+version: 1.0.0
+description: >
+  Rocket.Chat gateway adapter for Hermes Agent, built for shared team rooms.
+  Inbound over the Realtime API (DDP WebSocket) or Outgoing Webhooks, replies
+  over REST, @mention gating, per-person sessions with room context since the
+  asker's previous mention, thread-aware replies, a default-deny guard for
+  Hermes commands, restart catch-up and duplicate suppression that survive a
+  restart. Supports Rocket.Chat 8.7 - 9.x.
+author: Csaba Tatrai
+license: MIT
+requires_hermes: ">=0.21.6"
+python_dependencies:
+  - "aiohttp>=3.9,<4"
+requires_env:
+  - name: ROCKETCHAT_URL
+    description: "Rocket.Chat server base URL (e.g. https://chat.example.com)"
+    prompt: "Rocket.Chat server URL"
+    password: false
+  - name: ROCKETCHAT_TOKEN
+    description: "Bot account's Personal Access Token"
+    prompt: "Rocket.Chat bot PAT"
+    password: true
+  - name: ROCKETCHAT_USER_ID
+    description: "Bot account's Rocket.Chat user ID (paired with the PAT for X-Auth-Token/X-User-Id auth)"
+    prompt: "Rocket.Chat bot user ID"
+    password: false
+  - name: ROCKETCHAT_BOT_USERNAME
+    description: "Bot account's Username (the @handle used for @mention detection)"
+    prompt: "Rocket.Chat bot username"
+    password: false
+optional_env:
+  - name: ROCKETCHAT_HOME_CHANNEL
+    description: "Room ID of the Hermes home channel: startup greeting (unless ROCKETCHAT_STARTUP_GREETING=false) and cron deliver=rocketchat output; /sethome writes it"
+    prompt: "Home channel ID"
+    password: false
+  - name: ROCKETCHAT_ASKER_KEY
+    description: "Shared key (at least 32 characters) with the Rocket.Chat history MCP server: every turn carries a signed asker token, so the server only returns what the asking user may read (their own DM with the bot included). Empty = no asker token"
+    prompt: "Asker token key"
+    password: true
+  - name: ROCKETCHAT_WEBHOOK_SECRET
+    description: "Shared secret token configured on the Rocket.Chat Outgoing Webhook integration. Required with ROCKETCHAT_TRANSPORT=webhook (the platform refuses to start without it); unused with ddp"
+    prompt: "Outgoing webhook shared secret"
+    password: true
+  - name: ROCKETCHAT_WEBHOOK_HOST
+    description: "Host the plugin's own inbound webhook listener binds to (default: 127.0.0.1, loopback only)"
+    prompt: "Webhook listener host"
+    password: false
+  - name: ROCKETCHAT_WEBHOOK_PORT
+    description: "Port the plugin's own inbound webhook listener binds to (default: 8645)"
+    prompt: "Webhook listener port"
+    password: false
+  - name: ROCKETCHAT_STARTUP_GREETING
+    description: "Post the startup greeting to ROCKETCHAT_HOME_CHANNEL on a cold connect (default true)"
+    prompt: "Startup greeting? (true/false)"
+    password: false
+  - name: ROCKETCHAT_DM_ONLY
+    description: "Work only in one-to-one DMs: a room mention gets a one-time notice, never an agent turn (default false; for a personal Hermes)"
+    prompt: "DM only? (true/false)"
+    password: false
+  - name: ROCKETCHAT_REPLY_QUOTE
+    description: "In rooms, quote the question in the first message of the answer (link on the server's Site_Url, rendered as a quote card); never in a 1:1 DM (default true)"
+    prompt: "Quote the question in rooms? (true/false)"
+    password: false
+  - name: ROCKETCHAT_REPLY_MENTION
+    description: "In rooms, @mention the person who asked in the first message of the answer; never in a 1:1 DM (default true)"
+    prompt: "Mention the asker in rooms? (true/false)"
+    password: false
+  - name: ROCKETCHAT_ALLOW_BUILTIN_PRESET
+    description: "Hermes command bundle allowed from chat on top of /new, /reset, /approve, /deny, /stop, /btw, /context: default or personal (personal only on a single-owner bot)"
+    prompt: "Command preset (default/personal)"
+    password: false
+  - name: ROCKETCHAT_REQUIRE_MENTION
+    description: "Require @bot mention in channel messages (default true)"
+    prompt: "Require @mention? (true/false)"
+    password: false
+  - name: ROCKETCHAT_ALLOWED_USERS
+    description: "Comma-separated Rocket.Chat user IDs (not usernames) allowed to talk to the bot. Hermes core refuses everyone unless this, pairing or ROCKETCHAT_ALLOW_ALL_USERS=true is set"
+    prompt: "Allowed users (comma-separated)"
+    password: false
+  - name: ROCKETCHAT_ALLOW_ALL_USERS
+    description: "Allow any Rocket.Chat user to trigger the bot (default false; only for a closed server)"
+    prompt: "Allow all users? (true/false)"
+    password: false
+  - name: ROCKETCHAT_TRANSPORT
+    description: "Inbound transport: 'ddp' (default - Realtime API WebSocket only, no HTTP listener) or 'webhook' (Outgoing Webhook HTTP listener instead; needs ROCKETCHAT_WEBHOOK_SECRET)"
+    prompt: "Transport (ddp/webhook)"
+    password: false
+  - name: ROCKETCHAT_INBOUND_DEDUP_RETENTION_HOURS
+    description: "How long (hours) an already-handled inbound message id is remembered; also the age limit - an older Rocket.Chat message (e.g. redelivered after a reaction or edit) never reaches the agent (default 72)"
+    prompt: "Inbound dedup retention (hours)"
+    password: false
+  - name: ROCKETCHAT_TIMEZONE
+    description: "IANA time zone (e.g. Europe/Berlin) of the room-context timestamps, written with their UTC offset (default: the gateway process's local time zone; an unknown name keeps it with a warning)"
+    prompt: "Time zone (IANA name, empty = local)"
+    password: false
+  - name: ROCKETCHAT_HISTORY_LIMIT
+    description: "Room context: at most this many recent messages (since the person's previous mention, or since the bot's last reply in the room or thread) go before each request as context (default 50, maximum 100; 0 turns the room context off)"
+    prompt: "Room context limit (messages, 0 = off)"
+    password: false
+  - name: ROCKETCHAT_HISTORY_MIN_MESSAGES
+    description: "Room context: when the block runs since the bot's last reply (no previous mention of the person in the fetched page, or a shared thread), at least this many recent messages, even from before that reply (default 20, at most ROCKETCHAT_HISTORY_LIMIT)"
+    prompt: "Room context minimum (messages)"
+    password: false
+  - name: ROCKETCHAT_HISTORY_TOKEN_BUDGET
+    description: "Room context (and DM seed): optional cap of the block's size in estimated tokens, oldest lines dropped first (default 0 = no cap)"
+    prompt: "Room context token budget (0 = no cap)"
+    password: false
+  - name: ROCKETCHAT_DM_SEED_MESSAGES
+    description: "The first contact in a one-to-one DM (while the bot has never written there) gets at most this many of the DM's last messages as a context block (default 0 = none, maximum 100)"
+    prompt: "DM seed messages (0 = none)"
+    password: false
+  - name: ROCKETCHAT_OUTBOUND_FILES
+    description: "Upload the files the agent sends with MEDIA:/absolute/path into the room or thread (default true; false = nothing is uploaded and the platform hint leaves the tag out)"
+    prompt: "Send files from the agent? (true/false)"
+    password: false
+  - name: ROCKETCHAT_STARTUP_CATCHUP_MODE
+    description: "After a restart, mentions and DMs sent while the bot was down (at most ROCKETCHAT_STARTUP_CATCHUP_MAX_SECONDS, default 600): notice (default; one 'please resend' note per room or thread), replay (answer up to ROCKETCHAT_STARTUP_CATCHUP_MAX_DISPATCHES, default 10, the rest get the note) or off"
+    prompt: "Messages missed during a restart (notice/replay/off)"
+    password: false
+  - name: ROCKETCHAT_IGNORE_SENDERS
+    description: "Comma-separated usernames or user IDs whose messages never start a turn, in rooms and DMs (e.g. the other bots on the server, so two bots cannot answer each other in a loop)"
+    prompt: "Ignored senders (comma-separated)"
+    password: false
+  - name: ROCKETCHAT_ACK_REACTION
+    description: "Emoji shortname on the mentioning message while the agent works; none/off disables it (default eyes)"
+    prompt: "Acknowledgement reaction"
+    password: false
+  - name: ROCKETCHAT_WS_HEARTBEAT_SECONDS
+    description: "DDP keepalive interval in seconds, 5-300; 0 disables it (default 30)"
+    prompt: "DDP heartbeat (seconds)"
+    password: false
+  - name: ROCKETCHAT_DDP_CATCHUP_MAX_SECONDS
+    description: "After a reconnect, the longest outage replayed; 0 disables the replay (default 600)"
+    prompt: "Reconnect catch-up window (seconds)"
+    password: false
+  - name: ROCKETCHAT_STARTUP_CATCHUP_MAX_SECONDS
+    description: "On a fresh start, how far back to look; 0 disables it (default 600)"
+    prompt: "Startup catch-up window (seconds)"
+    password: false
+  - name: ROCKETCHAT_STARTUP_CATCHUP_MAX_DISPATCHES
+    description: "In replay mode, the most turns one start launches, at least 1 (default 10)"
+    prompt: "Startup replay cap"
+    password: false
+  - name: ROCKETCHAT_WHOAMI_ENABLED
+    description: "Answer the /whoami identity command (default true)"
+    prompt: "Enable /whoami? (true/false)"
+    password: false
+  - name: ROCKETCHAT_WHOAMI_COMMAND
+    description: "The command word of /whoami (default /whoami)"
+    prompt: "whoami command"
+    password: false
+  - name: ROCKETCHAT_OUTBOUND_DEDUP_TTL_SECONDS
+    description: "Identical content to the same place within this window goes out once; 0 disables it (default 10)"
+    prompt: "Outbound dedup window (seconds)"
+    password: false
+  - name: ROCKETCHAT_DEDUP_STATE_DIR
+    description: "Directory for restart-surviving state (dedup caches, cursor, connection status); off/none keeps it in memory only (default $HERMES_HOME/rocketchat-plugin-dedup)"
+    prompt: "State directory"
+    password: false
+  - name: ROCKETCHAT_REASONING_LEAK_FORMATTING
+    description: "Remove reasoning a model leaks in front of its answer as plain text; only for models that do it (default false)"
+    prompt: "Clean leaked reasoning? (true/false)"
+    password: false
+  - name: ROCKETCHAT_REASONING_LEAK_MODE
+    description: "drop removes the leaked preamble, wrap keeps it as a quoted aside (default drop)"
+    prompt: "Leaked reasoning mode (drop/wrap)"
+    password: false
+  - name: ROCKETCHAT_REASONING_LEAK_PATTERN
+    description: "Regular expression for a leaked reasoning lead-in (default: built in)"
+    prompt: "Leaked reasoning pattern"
+    password: false
+  - name: ROCKETCHAT_REASONING_LEAK_LABEL
+    description: "First line of the quoted aside in wrap mode"
+    prompt: "Leaked reasoning label"
+    password: false
+  - name: ROCKETCHAT_ALWAYS_FRESH_FINAL_STREAMING
+    description: "Send the final streamed answer as a new message; leave off, see docs/configuration.md (default false)"
+    prompt: "Fresh final message? (true/false)"
+    password: false
