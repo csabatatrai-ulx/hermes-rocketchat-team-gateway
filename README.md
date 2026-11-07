@@ -4,6 +4,10 @@ A Rocket.Chat platform adapter for [Hermes Agent](https://hermes-agent.nousresea
 
 Supports **Rocket.Chat 8.7 – 9.x** from one code path. Requires **Hermes 0.21.6 or newer**.
 
+- **Standalone, as Hermes asks of third-party integrations.** It lives in its own repository and changes nothing in Hermes core, so keeping up with Rocket.Chat and Hermes releases is this project's job, not the Hermes maintainers'. It passes `hermes plugins validate`, and a contract test covers the Hermes interfaces it relies on.
+- **Built for shared rooms.** Each person gets their own session and room context, Hermes commands are blocked over chat unless allowed, and only the person who asked can approve their dangerous command.
+- **Tested live.** 761 unit tests, plus end-to-end runs with the official Hermes 0.23.0 image against Rocket.Chat 8.9.1, including a restart, a network outage and real clicks on the approval buttons.
+
 ![A dangerous command waits for a click. Another person's click runs nothing; the click of the person who asked runs it.](docs/images/approval-buttons.gif)
 
 ## Why this adapter
@@ -17,7 +21,7 @@ Supports **Rocket.Chat 8.7 – 9.x** from one code path. Requires **Hermes 0.21.
 
 ![Two people ask the bot at the same moment. Each answer quotes its question and mentions the asker, and both draw on what was said in the room.](docs/images/shared-room.png)
 
-**It is safe by default in front of many users.**
+**It guards a room with many users.**
 
 - Every Hermes command is blocked over chat unless allowed. A new command in a future Hermes is blocked from day one, and if the command registry cannot be read the guard fails closed. Otherwise anyone in a room could run `/model`, `/yolo` or `/restart`.
 - With `approvals.mode: manual`, a dangerous command waits for a click: accept and deny buttons appear on the prompt, and each click runs as the authenticated person who made it.
@@ -152,6 +156,12 @@ Choose [`rocketchat-platform`](https://github.com/HalfbitStudio/hermes-plugin-ro
 | [Architecture](docs/architecture.md) | module layout, delivery paths, design decisions |
 | [Troubleshooting](docs/troubleshooting.md) | symptoms and fixes |
 | [Development](docs/development.md) | running the tests |
+
+## Acknowledgements
+
+<a href="https://ulx.hu/"><img src="docs/images/ulx-logo.png" alt="ULX: enterprise open source IT" width="355"></a>
+
+Developed at [Ulx Kft.](https://ulx.hu/), an enterprise open source IT company, and released as open source with its permission.
 
 ## License
 
