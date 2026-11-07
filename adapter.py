@@ -40,19 +40,6 @@ from gateway.config import Platform, PlatformConfig
 from gateway.platforms._shared import env_is_connected, get_scoped_secret
 from gateway.platforms.base import BasePlatformAdapter, SendResult
 from gateway.platforms.event import MessageEvent, MessageType
-# Hermes' own skill-command resolver - see builtin_commands.py's module
-# docstring on why this is a SEPARATE registry from COMMAND_REGISTRY, and
-# why the import lives HERE (adapter.py already imports Hermes internals
-# directly, e.g. gateway.config above) rather than in builtin_commands.py
-# itself (kept import-free of Hermes internals for standalone testability,
-# same reasoning as every other injected callable in this plugin). Guarded
-# because a future Hermes refactor could move/rename this module - failing
-# to import it must not crash the whole adapter, but MUST be loud (a
-# silent None here would silently re-open the exact gap this closes).
-try:
-    from agent.skill_commands import resolve_skill_command_key as _resolve_skill_command_key
-except ImportError:  # pragma: no cover - defensive, see comment above
-    _resolve_skill_command_key = None
 
 from .config import (
     DEFAULT_WEBHOOK_HOST,
@@ -115,7 +102,7 @@ from .shared_state import (
     _shared_outbound_dedup,
     _shared_send_locks,
 )
-from .webhook_mixin import WebhookInboundMixin, _hermes_command_resolver
+from .webhook_mixin import WebhookInboundMixin, _hermes_command_resolver, _resolve_skill_command_key
 from .ddp_transport_mixin import DdpTransportMixin
 
 

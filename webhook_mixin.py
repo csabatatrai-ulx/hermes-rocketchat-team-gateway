@@ -23,8 +23,11 @@ import logging
 import os
 from typing import Any, Optional
 
-# A guarded import: a future Hermes refactor may move or rename this module. That must
-# not break the whole adapter, but it must be loud.
+# Hermes's skill-command resolver: skills are a separate registry from COMMAND_REGISTRY (see the
+# docstring of builtin_commands.py, which stays free of Hermes imports and gets this injected).
+# The only import of it in the plugin. A guarded import: a future Hermes refactor may move or
+# rename this module. That must not break the whole adapter, but it must be loud: adapter.py logs
+# a warning at startup when this is None.
 try:
     from agent.skill_commands import resolve_skill_command_key as _resolve_skill_command_key
 except ImportError:  # pragma: no cover - defensive, see comment above
