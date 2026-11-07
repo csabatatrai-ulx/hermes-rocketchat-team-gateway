@@ -43,7 +43,7 @@ class TestClearAck(unittest.IsolatedAsyncioTestCase):
         return make_bare_instance(self.RocketChatAdapter, **attrs)
 
     async def test_clear_ack_removes_the_pending_reaction(self):
-        instance = self._instance(_pending_ack={"room1": "msg1"})
+        instance = self._instance(_pending_ack={"room1": ["msg1"]})
         instance._safe_react = AsyncMock()
         instance._clear_ack("room1")
         await asyncio.sleep(0)  # let the fire-and-forget create_task run
@@ -51,12 +51,35 @@ class TestClearAck(unittest.IsolatedAsyncioTestCase):
         instance._safe_react.assert_awaited_once_with("msg1", "eyes", False)
 
     async def test_clear_ack_is_idempotent(self):
-        instance = self._instance(_pending_ack={"room1": "msg1"})
+        instance = self._instance(_pending_ack={"room1": ["msg1"]})
         instance._safe_react = AsyncMock()
         instance._clear_ack("room1")
         instance._clear_ack("room1")  # second call: nothing pending anymore
         await asyncio.sleep(0)
         instance._safe_react.assert_awaited_once()
+
+    async def test_concurrent_askers_each_keep_their_own_reaction(self):
+        instance = self._instance(_pending_ack={"room1": ["q1", "q2"]})
+        instance._safe_react = AsyncMock()
+        instance._clear_ack("room1", "q2")
+        await asyncio.sleep(0)
+        instance._safe_react.assert_awaited_once_with("q2", "eyes", False)
+        self.assertEqual(instance._pending_ack["room1"], ["q1"])
+
+    async def test_progress_bubble_does_not_clear_another_askers_reaction(self):
+        instance = self._instance(_pending_ack={"room1": ["q1", "q2"]})
+        instance._safe_react = AsyncMock()
+        instance._clear_ack("room1")
+        await asyncio.sleep(0)
+        instance._safe_react.assert_not_awaited()
+        self.assertEqual(instance._pending_ack["room1"], ["q1", "q2"])
+
+    async def test_a_reply_to_an_unknown_message_clears_nothing(self):
+        instance = self._instance(_pending_ack={"room1": ["q1"]})
+        instance._safe_react = AsyncMock()
+        instance._clear_ack("room1", "other")
+        await asyncio.sleep(0)
+        instance._safe_react.assert_not_awaited()
 
     async def test_clear_ack_with_nothing_pending_is_a_no_op(self):
         instance = self._instance()
@@ -65,7 +88,7 @@ class TestClearAck(unittest.IsolatedAsyncioTestCase):
         instance._safe_react.assert_not_awaited()
 
     async def test_clear_ack_does_nothing_when_ack_reaction_disabled(self):
-        instance = self._instance(_cfg=_Cfg(ack_reaction=""), _pending_ack={"room1": "msg1"})
+        instance = self._instance(_cfg=_Cfg(ack_reaction=""), _pending_ack={"room1": ["msg1"]})
         instance._safe_react = AsyncMock()
         instance._clear_ack("room1")
         instance._safe_react.assert_not_awaited()

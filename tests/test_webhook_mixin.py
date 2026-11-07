@@ -123,7 +123,7 @@ class TestHandleOutgoingWebhook(unittest.TestCase):
         # The HTTP response goes back BEFORE the detached task; this checks that the
         # dispatch really happened once allowed to run.
         instance._augment_and_handle.assert_awaited_once()
-        self.assertEqual(instance._pending_ack.get("room1"), "m-plain")
+        self.assertEqual(instance._pending_ack.get("room1"), ["m-plain"])
         instance._safe_react.assert_called_once_with("m-plain", instance._cfg.ack_reaction, True)
 
     def test_dm_only_room_mention_notices_once_per_room_without_a_turn(self):

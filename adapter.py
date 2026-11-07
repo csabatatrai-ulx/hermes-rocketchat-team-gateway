@@ -259,7 +259,7 @@ class RocketChatAdapter(
         # Deliberately one static reaction: an animated sequence was tried, but every
         # reaction change reorders Rocket.Chat's message list, which looks like a jump
         # to someone watching a live channel.
-        self._pending_ack: Dict[str, str] = {}
+        self._pending_ack: Dict[str, List[str]] = {}
         # ROCKETCHAT_DM_ONLY: rooms where the "I only work in DMs" notice has already
         # gone out (once per room per process, see webhook_mixin).
         self._dm_only_noticed_rooms: Set[str] = set()
@@ -470,7 +470,7 @@ class RocketChatAdapter(
 
         # The reply is posting now: drop the instant "seen you" reaction we put on the
         # user's @mention. Fire-and-forget inside.
-        self._clear_ack(chat_id)
+        self._clear_ack(chat_id, reply_to or (metadata or {}).get("reply_to_message_id") or "")
 
         # Model provider failure: after failed API calls Hermes core sends an English
         # error ("API call failed after N retries: ..."). User and operator should both
@@ -640,7 +640,7 @@ class RocketChatAdapter(
         """
         import mimetypes
 
-        self._clear_ack(chat_id)
+        self._clear_ack(chat_id, (metadata or {}).get("reply_to_message_id") or "")
         name = file_name or os.path.basename(path) or "file"
         mime = mimetypes.guess_type(name)[0] or "application/octet-stream"
         ext = os.path.splitext(name)[1].lower() or "-"
@@ -944,19 +944,34 @@ class RocketChatAdapter(
                 exc_info=True,
             )
 
-    def _clear_ack(self, chat_id: str) -> None:
-        """Remove the instant-ack reaction for ``chat_id`` if one is pending.
+    def _clear_ack(self, chat_id: str, trigger: str = "") -> None:
+        """Remove the instant-ack reaction of the message this reply answers.
 
-        Called from ``send()`` the moment the agent's reply posts. Idempotent (``pop``): a turn
-        that emits multiple ``send()`` calls only un-reacts once.
+        Called from ``send()`` the moment the agent's reply posts. Tracked per message, because
+        several people can be waiting in one room at once: ``trigger`` is the question's id when core
+        names it (``reply_to``). Without one (a progress bubble, a status line) the reaction is removed
+        only if a single message is waiting, since another asker's reaction must not go early.
 
-        No error signal here: Hermes core surfaces failures itself (retry classification,
-        delivery ledger), a failed turn almost always reaches the user as some text reply via
-        `send()`, and there is no reliable "this turn is dead" hook to hang an error emoji on
-        without risking a false positive.
+        No error signal here: Hermes core surfaces failures itself (retry classification, delivery
+        ledger), a failed turn almost always reaches the user as some text reply via `send()`, and there
+        is no reliable "this turn is dead" hook to hang an error emoji on without risking a false
+        positive.
         """
-        msg_id = self._pending_ack.pop(chat_id, None)
-        if msg_id and self._cfg.ack_reaction:
+        waiting = self._pending_ack.get(chat_id)
+        if not waiting:
+            return
+        if trigger:
+            if trigger not in waiting:
+                return
+            msg_id = trigger
+        elif len(waiting) == 1:
+            msg_id = waiting[0]
+        else:
+            return
+        waiting.remove(msg_id)
+        if not waiting:
+            del self._pending_ack[chat_id]
+        if self._cfg.ack_reaction:
             asyncio.create_task(
                 self._safe_react(msg_id, self._cfg.ack_reaction, False)
             )

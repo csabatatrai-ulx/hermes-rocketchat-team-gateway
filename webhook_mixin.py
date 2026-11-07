@@ -421,7 +421,7 @@ class WebhookInboundMixin:
             ))
 
         if self._cfg.ack_reaction and decision.message_id:
-            self._pending_ack[decision.channel_id] = decision.message_id
+            self._pending_ack.setdefault(decision.channel_id, []).append(decision.message_id)
             asyncio.create_task(
                 self._safe_react(decision.message_id, self._cfg.ack_reaction, True)
             )
