@@ -25,6 +25,7 @@ from typing import Any, Optional
 
 from .builtin_commands import (
     PERSISTENT_APPROVAL_KEY,
+    bang_to_slash,
     blocked_builtin_command,
     is_command_allowed,
     parse_builtin_command_name,
@@ -241,6 +242,7 @@ class WebhookInboundMixin:
             is_duplicate=self._inbound_dedup.is_duplicate,
             max_message_age_seconds=self._cfg.inbound_dedup_retention_hours * 3600.0,
             is_whoami_command=lambda text, command: is_whoami_command(text, command=command),
+            typed_command=lambda text: bang_to_slash(text, self._cfg.allowed_builtin_commands, ScopedEnv()),
             blocked_builtin_command=lambda text: blocked_persistent_approval(
                 text, self._cfg.allowed_builtin_commands
             ) or blocked_builtin_command(text, self._cfg.allowed_builtin_commands, ScopedEnv()),

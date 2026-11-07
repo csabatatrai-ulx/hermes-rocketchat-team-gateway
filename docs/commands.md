@@ -66,6 +66,14 @@ rocketchat:
   allow_admin_from: [<admin user id>]         # one-to-one DMs
 ```
 
-## Rocket.Chat clients and slash commands
+## Typing a command
 
-Web and desktop clients handle unknown `/` commands themselves. Mention the bot first (`@hermes /new`), or enable `Message_AllowUnrecognizedSlashCommand` in Rocket.Chat.
+Rocket.Chat clients treat a message that starts with `/` as one of their own commands and do not send an unknown one. Three forms work:
+
+| Form | Where |
+|---|---|
+| `@hermes /new` | Rooms and DMs. Hermes's own text prompts show this form. |
+| `!new` | DMs, and after the mention in rooms (`@hermes !new`), as on Hermes's Slack and Matrix adapters. Only allowed or documented commands are rewritten, so "!important" stays text. |
+| `/new` | Only with `Message_AllowUnrecognizedSlashCommand` enabled in Rocket.Chat |
+
+Rocket.Chat's own `/help`, `/status` and `/topic` share a name with Hermes commands. They run as Rocket.Chat commands unless the bot is mentioned first.

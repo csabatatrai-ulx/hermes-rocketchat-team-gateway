@@ -88,6 +88,9 @@ class ApprovalPromptTests(unittest.TestCase):
         self.rest.post_message.return_value = {"success": False, "error": "nope"}
         self.assertFalse(self._confirm(self._adapter(allowed_builtin_commands=frozenset({"approve"}))).success)
 
+    def test_hermes_text_prompts_name_the_form_a_client_sends(self):
+        self.assertEqual(self._adapter().typed_command_prefix, "@hermes /")
+
     def test_disabled_buttons_fall_back_to_hermes_text_prompt(self):
         result = asyncio.run(self._adapter(approval_buttons=False)._send_exec_approval_prompt(self._prompt("s2")))
         self.assertFalse(result.success)

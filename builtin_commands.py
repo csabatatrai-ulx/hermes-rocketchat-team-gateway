@@ -288,6 +288,23 @@ def blocked_builtin_command(text: str, allowed: FrozenSet[str], env: Mapping[str
     return command_allowlist_key(word)
 
 
+def bang_to_slash(text: str, allowed: FrozenSet[str], env: Mapping[str, str]) -> str:
+    """``!word ...`` as ``/word ...`` when the word is an allowed or a documented command, else ``text``.
+
+    Rocket.Chat clients swallow a typed ``/word``, so ``!word`` is the form a person can type in a DM, as on
+    Hermes's Slack and Matrix adapters. An ordinary exclamation ("!important") stays text. A documented but
+    refused command is rewritten too, so the guard answers it instead of the model playing along.
+    """
+    if not text.startswith("!"):
+        return text
+    word = parse_builtin_command_name("/" + text[1:])
+    if not word:
+        return text
+    if is_command_allowed(word, allowed, env) or command_allowlist_key(word) in BUILTIN_COMMANDS:
+        return "/" + text[1:]
+    return text
+
+
 # Hermes's answers that grant persistent approval (``_SLASH_CONFIRM_*_CHOICES``,
 # ``_PLAINTEXT_APPROVAL_WORDS``, ``_APPROVE_CHOICE_BY_ARG`` in Hermes core). The plugin
 # cannot see whether a confirmation is pending, so these are always intercepted: a

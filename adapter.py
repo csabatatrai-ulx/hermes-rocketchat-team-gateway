@@ -666,6 +666,14 @@ class RocketChatAdapter(
         remember_approval_card(prompt.session_key, prompt.chat_id, message_id, text, tmid)
         return SendResult(success=True, message_id=message_id)
 
+    @property
+    def typed_command_prefix(self) -> str:  # type: ignore[override]
+        """What Hermes tells people to type in its text prompts ("reply `{prefix}approve`").
+
+        A typed ``/approve`` never leaves a Rocket.Chat client; with the mention it does, in rooms and DMs alike.
+        """
+        return f"@{self._cfg.bot_username} /"
+
     async def send_slash_confirm(
         self,
         chat_id: str,
@@ -1087,7 +1095,7 @@ _RELIED_BASE_MEMBERS = (
     # not in the plugin guide; documented in ADDING_A_PLATFORM.md or the base class
     "_source_session_key", "_send_exec_approval_prompt", "send_slash_confirm",
     "_notify_fatal_error", "prefers_fresh_final_streaming",
-    "_set_fatal_error", "splits_long_messages", "stop_typing",
+    "_set_fatal_error", "splits_long_messages", "stop_typing", "typed_command_prefix",
     "truncate_message",
 )
 _RELIED_EVENT_FIELDS = (

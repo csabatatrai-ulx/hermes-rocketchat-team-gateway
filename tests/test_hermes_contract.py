@@ -118,6 +118,7 @@ KNOWN_UNDOCUMENTED_MEMBERS = {
     "prefers_fresh_final_streaming": "public member",
     "truncate_message": "public member; built-in adapters chunk this way too",
     "splits_long_messages": "public class attribute",
+    "typed_command_prefix": "public class attribute; Slack and Matrix set it",
     "_set_fatal_error": "private; bundled plugins call it too",
     "_notify_fatal_error": "private",
 }

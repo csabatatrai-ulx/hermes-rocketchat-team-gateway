@@ -36,6 +36,7 @@ from inbound import (  # noqa: E402
 )
 from builtin_commands import (  # noqa: E402
     DEFAULT_ALLOWED_BUILTIN_COMMANDS,
+    bang_to_slash,
     blocked_builtin_command,
 )
 
@@ -379,6 +380,15 @@ class TestClassifyInboundBuiltinCommand(unittest.TestCase):
         d = self.classify(body(text=f"@{BOT} /nosuchcommand something"))
         self.assertEqual(d.outcome, HANDLE_BUILTIN_COMMAND_BLOCKED)
         self.assertEqual(d.builtin_command_name, "nosuchcommand")
+
+    def test_a_typed_bang_command_is_guarded_like_a_slash(self):
+        typed = lambda text: bang_to_slash(text, DEFAULT_ALLOWED_BUILTIN_COMMANDS, {})  # noqa: E731
+        d = self.classify(body(text=f"@{BOT} !yolo on"), typed_command=typed)
+        self.assertEqual(d.outcome, HANDLE_BUILTIN_COMMAND_BLOCKED)
+        d = self.classify(body(text=f"@{BOT} !new"), typed_command=typed)
+        self.assertEqual((d.outcome, d.text), (HANDLE_MESSAGE, "/new"))
+        d = self.classify(body(text=f"@{BOT} !important"), typed_command=typed)
+        self.assertEqual((d.outcome, d.text), (HANDLE_MESSAGE, "!important"))
 
     def test_plain_text_is_never_blocked(self):
         d = self.classify(body(text=f"@{BOT} what's the status?"))

@@ -324,6 +324,7 @@ def classify_inbound(
     is_duplicate: Optional[Callable[[str], bool]] = None,
     is_whoami_command: Optional[Callable[[str, str], bool]] = None,
     blocked_builtin_command: Optional[Callable[[str], str]] = None,
+    typed_command: Optional[Callable[[str], str]] = None,
     max_message_age_seconds: Optional[float] = None,
     now_fn: Callable[[], float] = time.time,
 ) -> InboundDecision:
@@ -430,6 +431,9 @@ def classify_inbound(
             return decision(IGNORE_DUPLICATE)
 
     text = strip_mention(raw_text, pattern) if mentioned else raw_text.strip()
+    # A typed command in the form the client lets through (``!new``), as ``/new`` from here on.
+    if typed_command is not None:
+        text = typed_command(text)
 
     # Only after stripping the mention: the user typed "@Bot /whoami", so the
     # command is only recognisable once the mention is gone. The resolved identity comes from

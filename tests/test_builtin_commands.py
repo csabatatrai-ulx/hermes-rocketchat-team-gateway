@@ -12,6 +12,7 @@ from builtin_commands import (  # noqa: E402
     DEFAULT_ALLOWED_BUILTIN_COMMANDS,
     PERSISTENT_APPROVAL_KEY,
     allowed_builtin_commands,
+    bang_to_slash,
     blocked_builtin_command,
     blocked_persistent_approval,
     command_allowlist_key,
@@ -280,6 +281,27 @@ class TestBlockedBuiltinCommand(unittest.TestCase):
         self.assertEqual(self.block("/google-workspace do X", env=env), "")
         self.assertEqual(self.block("/google_workspace do X", env=env), "")
         self.assertEqual(self.block("/other-skill", env=env), "other_skill")
+
+
+class TestBangToSlash(unittest.TestCase):
+    def bang(self, text, env=None):
+        return bang_to_slash(text, DEFAULT_ALLOWED_BUILTIN_COMMANDS, env or {})
+
+    def test_allowed_and_documented_commands_are_rewritten(self):
+        self.assertEqual(self.bang("!new"), "/new")
+        self.assertEqual(self.bang("!approve"), "/approve")
+        self.assertEqual(self.bang("!yolo on"), "/yolo on")
+        self.assertEqual(self.bang("!NEW"), "/NEW")
+
+    def test_ordinary_exclamations_stay_text(self):
+        for text in ("!important: read this", "!!", "!", "hello!", "!etc/hosts"):
+            with self.subTest(text=text):
+                self.assertEqual(self.bang(text), text)
+
+    def test_an_allowed_skill_is_rewritten(self):
+        env = {"ROCKETCHAT_ALLOW_SKILL_GOOGLE_WORKSPACE": "true"}
+        self.assertEqual(self.bang("!google-workspace x", env), "/google-workspace x")
+        self.assertEqual(self.bang("!google-workspace x"), "!google-workspace x")
 
 
 class TestIsCommandAllowed(unittest.TestCase):
