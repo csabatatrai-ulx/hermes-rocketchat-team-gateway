@@ -4,6 +4,8 @@ A Rocket.Chat platform adapter for [Hermes Agent](https://hermes-agent.nousresea
 
 Supports **Rocket.Chat 8.7 – 9.x** from one code path. Requires **Hermes 0.21.6 or newer**.
 
+![A dangerous command waits for a click. Another person's click runs nothing; the click of the person who asked runs it.](docs/images/approval-buttons.gif)
+
 ## Why this adapter
 
 **It keeps a shared room understandable.**
@@ -12,6 +14,8 @@ Supports **Rocket.Chat 8.7 – 9.x** from one code path. Requires **Hermes 0.21.
 - Every mention carries what happened in the room since that person's previous mention, marked as context, with dates and UTC offsets. Nothing is stored; it is read from Rocket.Chat each time.
 - Answers quote the question and mention the asker, so concurrent answers stay attributable. A thread mention is answered in the thread.
 - A one-to-one DM needs no mention. A DM of three or more people follows room rules.
+
+![Two people ask the bot at the same moment. Each answer quotes its question and mentions the asker, and both draw on what was said in the room.](docs/images/shared-room.png)
 
 **It is safe by default in front of many users.**
 
@@ -28,6 +32,37 @@ Supports **Rocket.Chat 8.7 – 9.x** from one code path. Requires **Hermes 0.21.
 - After a reconnect, missed mentions are replayed. After a restart, the bot says which messages it did not process, or answers them with `replay` mode.
 - A provider failure becomes a short notice naming the model provider, not a raw stack of retries.
 - Removed Rocket.Chat APIs are detected at runtime and deprecation headers are logged, so a server upgrade shows up in the log before it breaks.
+
+## How it works
+
+```mermaid
+flowchart LR
+    RC["<b>Rocket.Chat</b><br/>rooms, threads, DMs"]
+
+    subgraph Plugin["This plugin: no agent tools"]
+        direction TB
+        Decide["<b>Decide</b><br/>mention, allowlist,<br/>dedup, command guard"]
+        Build["<b>Build the turn</b><br/>room context,<br/>attachments"]
+        Send["<b>Send</b><br/>duplicate guard, quote,<br/>approval buttons"]
+        Standalone["<b>Standalone send</b><br/>REST only"]
+        Decide --> Build
+    end
+
+    subgraph Hermes["Hermes Agent"]
+        direction TB
+        Core["<b>Gateway core</b><br/>sessions, approvals,<br/>agent and tools"]
+        Cron["<b>Cron</b><br/>no gateway running"]
+    end
+
+    RC -- "DDP or webhook" --> Decide
+    Build -- "MessageEvent" --> Core
+    Core -- "reply" --> Send
+    Send -- "REST" --> RC
+    Cron --> Standalone
+    Standalone -- "REST" --> RC
+```
+
+The plugin only carries messages. Sessions, the agent and approvals stay in Hermes, and room access for the agent belongs in an MCP server. See [architecture](docs/architecture.md).
 
 ## Quick start
 
