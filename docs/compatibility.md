@@ -38,6 +38,7 @@ At startup the adapter checks that every base-class member it relies on exists, 
 | WebSocket `/websocket`, DDP `login {resume}`, `stream-room-messages` `__my_messages__` | Inbound |
 | DDP `stream-notify-room` `<rid>/user-activity` | Typing indicator |
 | Outgoing webhook, no script | Inbound fallback |
+| Message attachment `actions` (`type: button`, `msg_in_chat_window`) | Approval buttons. Marked deprecated in Rocket.Chat's typings but present in 9.0; the typed commands are the fallback |
 
 Replies always go over REST, because 9.0 removes the DDP `sendMessage` and `updateMessage` methods. `rooms.history` is deliberately unused: it exists only from 8.9.
 

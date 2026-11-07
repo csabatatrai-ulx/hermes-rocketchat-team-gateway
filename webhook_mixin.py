@@ -89,6 +89,7 @@ from .asker import issue_asker
 from .media import DownloadedMedia, download_attachments, extract_file_refs, message_type_name
 from .reply_reference import ReplyTarget
 from .shared_state import _shared_reply_targets, remember_direct_room_kind
+from .approval_buttons import is_approval_answer
 from .scoped_env import ScopedEnv
 from .user_texts import user_text
 from .whoami import is_whoami_command
@@ -420,7 +421,7 @@ class WebhookInboundMixin:
                 is_direct=decision.is_direct,
             ))
 
-        if self._cfg.ack_reaction and decision.message_id:
+        if self._cfg.ack_reaction and decision.message_id and not is_approval_answer(decision.text):
             self._pending_ack.setdefault(decision.channel_id, []).append(decision.message_id)
             asyncio.create_task(
                 self._safe_react(decision.message_id, self._cfg.ack_reaction, True)
@@ -699,6 +700,8 @@ class WebhookInboundMixin:
             # source's identity first and computes in the running profile's namespace,
             # so the key is exactly what core uses for the turn.
             session_key = self._source_session_key(source)
+            if is_approval_answer(decision.text):
+                asyncio.create_task(self._retire_approval_card(session_key, decision.sender_username))
             # During preparation (context, file download) the shutdown notice is ours;
             # after handle_message() it is core's (see the docstring). The entry is
             # removed right after handle_message().

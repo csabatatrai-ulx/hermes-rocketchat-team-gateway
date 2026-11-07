@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import os
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from .dedup import InboundDeduplicator, OutboundDeduplicator
 
@@ -152,3 +152,27 @@ def _shared_sent_prefixes():
 def _shared_site_url() -> Dict[str, str]:
     """Bot username -> Rocket.Chat's ``Site_Url`` (filled by connect())."""
     return _SITE_URL
+
+
+# Prompts with live buttons, per session (oldest first), so an answer can remove them. Bounded: a prompt
+# nobody answers must not stay in memory forever.
+APPROVAL_CARDS_LIMIT = 200
+_approval_cards: Dict[str, List[Tuple[str, str, str, str]]] = {}
+
+
+def remember_approval_card(session_key: str, room_id: str, message_id: str, text: str, tmid: str) -> None:
+    """Note a posted prompt's ``(room id, message id, text, thread)``."""
+    while len(_approval_cards) >= APPROVAL_CARDS_LIMIT and session_key not in _approval_cards:
+        _approval_cards.pop(next(iter(_approval_cards)))
+    _approval_cards.setdefault(session_key, []).append((room_id, message_id, text, tmid))
+
+
+def pop_approval_card(session_key: str) -> Optional[Tuple[str, str, str, str]]:
+    """The session's oldest live prompt (the one Hermes answers first), or ``None``."""
+    cards = _approval_cards.get(session_key)
+    if not cards:
+        return None
+    card = cards.pop(0)
+    if not cards:
+        del _approval_cards[session_key]
+    return card

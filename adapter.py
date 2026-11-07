@@ -66,6 +66,7 @@ from .dedup import (
     InboundDeduplicator,
     OutboundDeduplicator,
 )
+from .approval_buttons import approval_attachments
 from .scoped_env import ScopedEnv as _ScopedEnv
 from .setup_wizard import interactive_setup
 from .standalone import standalone_send
@@ -103,6 +104,8 @@ _TYPING_DDP_METHOD = "stream-notify-room"
 from .builtin_commands import unknown_allowed_commands
 from .reply_reference import ReplyTarget, reply_prefix
 from .shared_state import (
+    pop_approval_card,
+    remember_approval_card,
     _shared_direct_room_kinds,
     _shared_reply_targets,
     _shared_sent_prefixes,
@@ -670,6 +673,55 @@ class RocketChatAdapter(
         logger.info("Rocket.Chat: outbound file sent to room %s (%s, %d bytes)", chat_id, ext, size)
         return SendResult(success=True, message_id=posted_message_id(answer))
 
+    # ------------------------------------------------------------------
+    # Dangerous-command prompt with buttons
+    # ------------------------------------------------------------------
+    async def _send_exec_approval_prompt(self, prompt: Any) -> SendResult:
+        """Hermes's documented hook: its prompt text with accept and deny buttons (approval_buttons.py).
+
+        An unsuccessful result makes core fall back to its plain-text ``/approve`` prompt, which is what
+        should happen when the buttons are off, no choice is allowed, or the server refuses the attachment.
+        """
+        if not self._cfg.approval_buttons:
+            return SendResult(success=False, error="Approval buttons are disabled")
+        attachments = approval_attachments(
+            prompt.actions, self._cfg.bot_username, self._cfg.allowed_builtin_commands
+        )
+        if not attachments:
+            return SendResult(success=False, error="No approval choice is allowed over Rocket.Chat")
+        text = self.format_message(prompt.text)
+        fallback = user_text("approval_typed_fallback", bot=self._cfg.bot_username)
+        tmid = self._reply_thread_id(prompt.metadata)
+        try:
+            answer = await self._rest.post_message(prompt.chat_id, f"{text}\n\n{fallback}", tmid, attachments=attachments)
+        except RocketChatNetworkError as exc:
+            return SendResult(success=False, error=str(exc), retryable=True)
+        if not is_successful(answer):
+            return SendResult(success=False, error=str((answer or {}).get("error") or "refused"))
+        message_id = posted_message_id(answer)
+        remember_approval_card(prompt.session_key, prompt.chat_id, message_id, text, tmid)
+        return SendResult(success=True, message_id=message_id)
+
+    async def _retire_approval_card(self, session_key: str, answered_by: str) -> None:
+        """Replace the session's oldest answered prompt with one that has no buttons and says who answered.
+
+        A repost rather than an edit: ``chat.update`` drops attachments in the stored message, but a web client
+        that has the room open keeps showing the old buttons. Cosmetic, so it never raises; if the bot may not
+        delete, the edit is the fallback.
+        """
+        card = pop_approval_card(session_key)
+        if card is None:
+            return
+        room_id, message_id, text, tmid = card
+        answered = f"{text}\n\n{user_text('approval_answered', user=answered_by)}"
+        try:
+            if is_successful(await self._rest.delete_message(room_id, message_id)):
+                await self._rest.post_message(room_id, answered, tmid)
+            else:
+                await self._rest.update_message(room_id, message_id, answered)
+        except Exception:  # noqa: BLE001 - cosmetic, the answer itself already went through
+            logger.warning("Rocket.Chat: could not retire approval prompt %s", message_id, exc_info=True)
+
     def _reply_thread_id(self, metadata: Optional[Dict[str, Any]]) -> str:
         """The Rocket.Chat thread a reply belongs in, or ``""`` (main channel).
 
@@ -1037,7 +1089,7 @@ _RELIED_BASE_MEMBERS = (
     "format_message", "get_chat_info", "handle_message", "_mark_connected",
     "send", "send_document", "send_image_file", "send_typing", "send_video", "send_voice",
     # not in the plugin guide; documented in ADDING_A_PLATFORM.md or the base class
-    "_source_session_key",
+    "_source_session_key", "_send_exec_approval_prompt",
     "_notify_fatal_error", "prefers_fresh_final_streaming",
     "_set_fatal_error", "splits_long_messages", "stop_typing",
     "truncate_message",

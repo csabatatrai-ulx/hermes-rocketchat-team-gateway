@@ -36,7 +36,7 @@ Both inbound paths build the same payload shape and end in the same pure decisio
 | `rest_client.py` | REST API | No |
 | `config.py` | All settings in one dataclass | No |
 | `prompt_guidance.py`, `user_texts.py` | Text for the model, text for users | No |
-| `reply_reference.py`, `rc_markdown.py`, `reasoning_format.py`, `asker.py`, `whoami.py` | Small pure helpers | No |
+| `approval_buttons.py`, `reply_reference.py`, `rc_markdown.py`, `reasoning_format.py`, `asker.py`, `whoami.py` | Small pure helpers | No |
 
 `tests/test_agnostic_boundary.py` fails the build if a Hermes-independent module imports Hermes.
 

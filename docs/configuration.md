@@ -43,6 +43,7 @@ Every setting is a `ROCKETCHAT_*` environment variable, normally in `~/.hermes/.
 | `ROCKETCHAT_WHOAMI_ENABLED` | `true` | Answer `/whoami` |
 | `ROCKETCHAT_WHOAMI_COMMAND` | `/whoami` | Its command word |
 | `ROCKETCHAT_OUTBOUND_FILES` | `true` | Upload files the agent sends with `MEDIA:/path` |
+| `ROCKETCHAT_APPROVAL_BUTTONS` | `true` | Accept and deny buttons on a dangerous-command prompt |
 
 ## Room context
 

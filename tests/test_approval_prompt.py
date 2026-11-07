@@ -1,0 +1,89 @@
+"""The adapter's dangerous-command prompt and its retirement. Skips without Hermes core's source."""
+
+import asyncio
+import os
+import sys
+import types
+import unittest
+from unittest.mock import AsyncMock
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from _adapter_test_support import HERMES_AGENT_AVAILABLE, SKIP_REASON, load_mixin_module, make_bare_instance  # noqa: E402
+
+
+@unittest.skipUnless(HERMES_AGENT_AVAILABLE, SKIP_REASON)
+class ApprovalPromptTests(unittest.TestCase):
+    def setUp(self):
+        self.mod = load_mixin_module("adapter")
+        self.rest = AsyncMock()
+        self.rest.post_message.return_value = {"success": True, "message": {"_id": "card1"}}
+        self.rest.delete_message.return_value = {"success": True}
+
+    def _adapter(self, **cfg):
+        settings = dict(approval_buttons=True, bot_username="hermes", allowed_builtin_commands=frozenset({"approve", "deny"}),
+                        reasoning_leak_formatting_enabled=False)
+        settings.update(cfg)
+        return make_bare_instance(self.mod.RocketChatAdapter, _cfg=types.SimpleNamespace(**settings), _rest=self.rest)
+
+    def _prompt(self, key="session-a"):
+        return types.SimpleNamespace(chat_id="R1", session_key=key, text="Run this?", metadata={"thread_id": "T1"},
+                                     actions=[("Allow Once", "once", "primary"), ("Always", "always", ""), ("Deny", "deny", "danger")])
+
+    def test_prompt_goes_to_the_thread_with_allowed_buttons_and_typed_fallback(self):
+        result = asyncio.run(self._adapter()._send_exec_approval_prompt(self._prompt("s1")))
+        self.assertTrue(result.success)
+        args, kwargs = self.rest.post_message.await_args
+        self.assertEqual((args[0], args[2]), ("R1", "T1"))
+        self.assertIn("@hermes /approve", args[1])
+        self.assertEqual([b["msg"] for b in kwargs["attachments"][0]["actions"]], ["@hermes /approve", "@hermes /deny"])
+
+    def test_disabled_buttons_fall_back_to_hermes_text_prompt(self):
+        result = asyncio.run(self._adapter(approval_buttons=False)._send_exec_approval_prompt(self._prompt("s2")))
+        self.assertFalse(result.success)
+        self.rest.post_message.assert_not_awaited()
+
+    def test_no_allowed_choice_falls_back_too(self):
+        adapter = self._adapter(allowed_builtin_commands=frozenset())
+        self.assertFalse(asyncio.run(adapter._send_exec_approval_prompt(self._prompt("s3"))).success)
+
+    def test_a_refusal_falls_back_too(self):
+        self.rest.post_message.return_value = {"success": False, "error": "error-x"}
+        self.assertFalse(asyncio.run(self._adapter()._send_exec_approval_prompt(self._prompt("s4"))).success)
+
+    def test_an_answer_reposts_the_prompt_without_buttons(self):
+        adapter = self._adapter()
+
+        async def run():
+            await adapter._send_exec_approval_prompt(self._prompt("s5"))
+            self.rest.post_message.reset_mock()
+            await adapter._retire_approval_card("s5", "alice")
+
+        asyncio.run(run())
+        self.rest.delete_message.assert_awaited_once_with("R1", "card1")
+        args, kwargs = self.rest.post_message.await_args
+        self.assertEqual((args[0], args[2]), ("R1", "T1"))
+        self.assertIn("Run this?", args[1])
+        self.assertIn("Answered by @alice", args[1])
+        self.assertNotIn("/approve", args[1])
+        self.assertNotIn("attachments", kwargs)
+
+    def test_without_delete_rights_the_prompt_is_edited(self):
+        self.rest.delete_message.return_value = {"success": False}
+        adapter = self._adapter()
+
+        async def run():
+            await adapter._send_exec_approval_prompt(self._prompt("s6"))
+            await adapter._retire_approval_card("s6", "alice")
+
+        asyncio.run(run())
+        self.assertIn("Answered by @alice", self.rest.update_message.await_args.args[2])
+
+    def test_a_second_answer_finds_nothing_to_retire(self):
+        asyncio.run(self._adapter()._retire_approval_card("unknown-session", "alice"))
+        self.rest.delete_message.assert_not_awaited()
+
+
+if __name__ == "__main__":
+    unittest.main()

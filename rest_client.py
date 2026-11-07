@@ -564,8 +564,13 @@ class RocketChatRestClient:
                 return item["value"].rstrip("/")
         return ""
 
-    async def post_message(self, room_id: str, text: str = "", tmid: str = "") -> Dict[str, Any]:
-        return await self.post("chat.postMessage", post_message_payload(room_id, text, tmid))
+    async def post_message(
+        self, room_id: str, text: str = "", tmid: str = "", attachments: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        payload = post_message_payload(room_id, text, tmid)
+        if attachments:
+            payload["attachments"] = attachments
+        return await self.post("chat.postMessage", payload)
 
     async def upload_file(
         self,

@@ -180,3 +180,7 @@ optional_env:
     description: "Send the final streamed answer as a new message; leave off, see docs/configuration.md (default false)"
     prompt: "Fresh final message? (true/false)"
     password: false
+  - name: ROCKETCHAT_APPROVAL_BUTTONS
+    description: "Show accept and deny buttons on a dangerous-command prompt; the typed /approve and /deny always work (default true)"
+    prompt: "Approval buttons? (true/false)"
+    password: false

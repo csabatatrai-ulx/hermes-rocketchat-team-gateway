@@ -46,6 +46,9 @@ TEXTS = {
     "startup_catchup_skipped_many": (
         "_⚠️ I restarted and did not process {count} messages. Please send them again._"
     ),
+    # Under the buttons of a dangerous-command prompt (adapter._send_exec_approval_prompt).
+    "approval_typed_fallback": "_Or type `@{bot} /approve` or `@{bot} /deny`._",
+    "approval_answered": "Answered by @{user}",
     # /whoami (whoami.build_whoami_reply).
     "whoami_user": "**RC user:** `{username}`",
     "whoami_emails": "**E-mail(s):** {emails}",

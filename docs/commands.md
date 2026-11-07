@@ -34,6 +34,14 @@ Use the canonical name with hyphens as underscores (`ROCKETCHAT_ALLOW_BUILTIN_RE
 
 **If the registry cannot be imported,** the guard fails closed: every `/word` that is neither allowed nor an installed skill is blocked, and one warning is logged.
 
+## Approving a dangerous command
+
+When the agent wants to run something dangerous, Hermes asks first. The prompt carries **Accept** and **Deny** buttons, and the typed commands always work too.
+
+A button sends `@bot /approve` or `@bot /deny` as the person who clicked it, the same message they could type. So the same checks apply: the allowlist, the command guard, Hermes's admin lists and the session. In a room, someone else's click reaches their own session, where nothing is pending. In a shared thread any participant can answer, as with the typed command.
+
+Only choices the guard would allow get a button, so "always" is not offered unless `ROCKETCHAT_ALLOW_BUILTIN_ALWAYS=true`. `ROCKETCHAT_APPROVAL_BUTTONS=false` returns to Hermes's plain-text prompt.
+
 ## Persistent approval
 
 Answering a confirmation with "always", `/always`, `/remember` or `/approve always|session|permanent` writes to the gateway's whole `config.yaml`, so one room member would change it for everyone. These are refused unless `ROCKETCHAT_ALLOW_BUILTIN_ALWAYS=true`. A one-off `/approve` and `/deny` pass.

@@ -432,6 +432,9 @@ class RocketChatConfig:
     # adapter.py). When off, Hermes's default stays (core's "cannot send this" notice)
     # and the platform guidance does not offer the tag.
     outbound_files: bool = True
+    # ROCKETCHAT_APPROVAL_BUTTONS: accept and deny buttons on a dangerous-command prompt
+    # (approval_buttons.py). When off, Hermes sends its plain-text /approve prompt.
+    approval_buttons: bool = True
     # ROCKETCHAT_TRANSPORT (see ddp_transport_mixin.py): "ddp" (default: inbound only
     # through the Realtime API, the webhook HTTP server does not start) or "webhook"
     # (Outgoing Webhook HTTP listener, the fallback path). Either-or: the two cannot run
@@ -606,6 +609,7 @@ def load_config(
         # Env only (like ROCKETCHAT_ALLOW_BUILTIN_*): the platform guidance is fixed at
         # registration, when the ``config.yaml`` ``extra`` is not readable yet, so both
         # always see the same value.
+        approval_buttons=_flag("approval_buttons", extra, env, True),
         outbound_files=as_bool(
             env.get("ROCKETCHAT_OUTBOUND_FILES", ""), default=True, name="ROCKETCHAT_OUTBOUND_FILES"
         ),

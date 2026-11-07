@@ -20,6 +20,7 @@ _PACKAGE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # (adapter.py, __init__.py and the two transport mixins, see
 # _FRAMEWORK_EXEMPT below).
 AGNOSTIC_MODULES = [
+    "approval_buttons.py",
     "asker.py",
     "builtin_commands.py",
     "config.py",

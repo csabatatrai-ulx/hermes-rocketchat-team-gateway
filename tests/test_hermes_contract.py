@@ -109,6 +109,7 @@ DOCUMENTED_MEMBERS = {
     "format_message": "ADDING_A_PLATFORM.md (sibling adapters)",
     "_source_session_key": "ADDING_A_PLATFORM.md",
     "_event_session_key": "ADDING_A_PLATFORM.md",
+    "_send_exec_approval_prompt": "ADDING_A_PLATFORM.md (interactive UX)",
     # user guide: capabilities that can be implemented in an adapter
     "edit_message": "user-guide/features/plugins.md",
     "delete_message": "user-guide/messaging/index.md",
