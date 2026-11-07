@@ -6,7 +6,7 @@ The unit suite and a live end-to-end run pass on Hermes 0.22.6 and on the offici
 
 ## Hermes
 
-`requires_hermes: ">=0.21.6"`. The adapter uses only surfaces listed in Hermes's platform guide, which the test suite tracks in `tests/test_hermes_contract.py`.
+`requires_hermes: ">=0.22.3"`, the first release with the setup wizard helpers and the dashboard fields of `register_platform`. CI runs the tests against that release and the newest tested one. The adapter uses only surfaces listed in Hermes's platform guide, which the test suite tracks in `tests/test_hermes_contract.py`.
 
 At startup the adapter checks that every base-class member it relies on exists, and logs one ERROR naming any that are missing.
 
