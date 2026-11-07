@@ -165,4 +165,4 @@ Developed at [Ulx Kft.](https://ulx.hu/), an enterprise open source IT company, 
 
 ## License
 
-[MIT](LICENSE)
+[Apache License 2.0](LICENSE). See [NOTICE](NOTICE) for attribution.

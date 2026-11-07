@@ -10,7 +10,7 @@ description: >
   Hermes commands, restart catch-up and duplicate suppression that survive a
   restart. Supports Rocket.Chat 8.7 - 9.x.
 author: Csaba A. Tátrai
-license: MIT
+license: Apache-2.0
 requires_hermes: ">=0.21.6"
 python_dependencies:
   - "aiohttp>=3.9,<4"
