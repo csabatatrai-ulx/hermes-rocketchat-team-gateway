@@ -46,21 +46,41 @@ class ApprovalPromptTests(unittest.TestCase):
         ))
 
     def test_confirmation_has_buttons_and_no_always(self):
-        adapter = self._adapter(allowed_builtin_commands=frozenset({"approve", "cancel"}))
+        adapter = self._adapter(allowed_builtin_commands=frozenset({"approve", "deny"}))
         self.assertTrue(self._confirm(adapter).success)
         args, kwargs = self.rest.post_message.await_args
         self.assertEqual((args[0], args[2]), ("R1", "T1"))
         self.assertIn("Fresh session.", args[1])
         self.assertNotIn("Always", args[1])
         self.assertIn("@hermes /cancel", args[1])
-        self.assertEqual([b["msg"] for b in kwargs["attachments"][0]["actions"]], ["@hermes /approve", "@hermes /cancel"])
+        self.assertEqual([b["msg"] for b in kwargs["attachments"][0]["actions"]], ["@hermes /approve", "@hermes /deny"])
 
     def test_a_confirmation_answer_retires_the_card(self):
-        adapter = self._adapter(allowed_builtin_commands=frozenset({"approve", "cancel"}))
+        adapter = self._adapter(allowed_builtin_commands=frozenset({"approve", "deny"}))
         self._confirm(adapter, "s10")
         asyncio.run(adapter._retire_approval_card("s10", "alice"))
         self.rest.delete_message.assert_awaited_once_with("R1", "card1")
         self.assertIn("Answered by @alice", self.rest.post_message.await_args.args[1])
+
+    def test_an_unanswered_confirmation_does_not_take_the_retirement_from_a_prompt(self):
+        adapter = self._adapter(allowed_builtin_commands=frozenset({"approve", "deny"}))
+        self.rest.post_message.return_value = {"success": True, "message": {"_id": "confirm-card"}}
+        self._confirm(adapter, "s11")
+        self.rest.post_message.return_value = {"success": True, "message": {"_id": "danger-card"}}
+        asyncio.run(adapter._send_exec_approval_prompt(self._prompt("s11")))
+        asyncio.run(adapter._retire_approval_card("s11", "alice"))
+        self.rest.delete_message.assert_awaited_once_with("R1", "danger-card")
+        asyncio.run(adapter._retire_approval_card("s11", "alice"))
+        self.rest.delete_message.assert_awaited_with("R1", "confirm-card")
+
+    def test_a_newer_confirmation_supersedes_the_older_card(self):
+        adapter = self._adapter(allowed_builtin_commands=frozenset({"approve", "deny"}))
+        self.rest.post_message.return_value = {"success": True, "message": {"_id": "old"}}
+        self._confirm(adapter, "s12")
+        self.rest.post_message.return_value = {"success": True, "message": {"_id": "new"}}
+        self._confirm(adapter, "s12")
+        asyncio.run(adapter._retire_approval_card("s12", "alice"))
+        self.rest.delete_message.assert_awaited_once_with("R1", "new")
 
     def test_confirmation_falls_back_to_hermes_text_when_buttons_are_off_or_refused(self):
         self.assertFalse(self._confirm(self._adapter(approval_buttons=False)).success)

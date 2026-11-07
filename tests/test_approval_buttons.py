@@ -56,10 +56,10 @@ class ConfirmAttachmentTests(unittest.TestCase):
 
     def test_always_gets_no_button_by_default(self):
         self.assertEqual(self._buttons({"approve", "deny", "cancel"}),
-                         [("Approve Once", "@hermes /approve"), ("Cancel", "@hermes /cancel")])
+                         [("Approve Once", "@hermes /approve"), ("Cancel", "@hermes /deny")])
 
     def test_always_gets_a_button_when_allowed(self):
-        self.assertIn(("Always Approve", "@hermes /always"), self._buttons({"approve", "cancel", "always"}))
+        self.assertIn(("Always Approve", "@hermes /always"), self._buttons({"approve", "deny", "always"}))
 
     def test_nothing_allowed_means_no_attachment(self):
         self.assertEqual(confirm_attachments("hermes", frozenset()), [])

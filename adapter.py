@@ -92,6 +92,7 @@ from .reply_reference import ReplyTarget, reply_prefix
 from .shared_state import (
     pop_approval_card,
     remember_approval_card,
+    remember_confirm_card,
     _shared_direct_room_kinds,
     _shared_reply_targets,
     _shared_sent_prefixes,
@@ -694,7 +695,7 @@ class RocketChatAdapter(
         if not is_successful(answer):
             return SendResult(success=False, error=str((answer or {}).get("error") or "refused"))
         message_id = posted_message_id(answer)
-        remember_approval_card(session_key, chat_id, message_id, text, tmid)
+        remember_confirm_card(session_key, chat_id, message_id, text, tmid)
         return SendResult(success=True, message_id=message_id)
 
     async def _retire_approval_card(self, session_key: str, answered_by: str) -> None:

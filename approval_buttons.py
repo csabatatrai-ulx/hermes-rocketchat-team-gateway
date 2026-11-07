@@ -56,7 +56,8 @@ def confirm_attachments(bot_username: str, allowed_commands: FrozenSet[str]) -> 
     """The buttons of a slash-command confirmation (``/new``): the same rule, only allowed answers get one.
 
     "Always" would switch the confirmation off for everyone on the gateway, so it needs
-    ``ROCKETCHAT_ALLOW_BUILTIN_ALWAYS``.
+    ``ROCKETCHAT_ALLOW_BUILTIN_ALWAYS``. Cancel sends ``/deny``, which Hermes also takes as cancel here, because
+    someone else's click then gets "nothing pending" rather than "unknown command".
     """
     buttons = [
         {
@@ -66,7 +67,7 @@ def confirm_attachments(bot_username: str, allowed_commands: FrozenSet[str]) -> 
             "msg_in_chat_window": True,
             "msg_processing_type": "sendMessage",
         }
-        for label, command in (("Approve Once", "approve"), ("Always Approve", "always"), ("Cancel", "cancel"))
+        for label, command in (("Approve Once", "approve"), ("Always Approve", "always"), ("Cancel", "deny"))
         if command in allowed_commands
     ]
     return [{"button_alignment": "horizontal", "actions": buttons}] if buttons else []

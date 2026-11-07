@@ -158,6 +158,7 @@ def _shared_site_url() -> Dict[str, str]:
 # nobody answers must not stay in memory forever.
 APPROVAL_CARDS_LIMIT = 200
 _approval_cards: Dict[str, List[Tuple[str, str, str, str]]] = {}
+_confirm_cards: Dict[str, Tuple[str, str, str, str]] = {}
 
 
 def remember_approval_card(session_key: str, room_id: str, message_id: str, text: str, tmid: str) -> None:
@@ -167,11 +168,22 @@ def remember_approval_card(session_key: str, room_id: str, message_id: str, text
     _approval_cards.setdefault(session_key, []).append((room_id, message_id, text, tmid))
 
 
+def remember_confirm_card(session_key: str, room_id: str, message_id: str, text: str, tmid: str) -> None:
+    """Note a slash-command confirmation card. Hermes keeps one per session, the latest supersedes the rest."""
+    while len(_confirm_cards) >= APPROVAL_CARDS_LIMIT and session_key not in _confirm_cards:
+        _confirm_cards.pop(next(iter(_confirm_cards)))
+    _confirm_cards[session_key] = (room_id, message_id, text, tmid)
+
+
 def pop_approval_card(session_key: str) -> Optional[Tuple[str, str, str, str]]:
-    """The session's oldest live prompt (the one Hermes answers first), or ``None``."""
+    """The card the next answer belongs to, or ``None``.
+
+    The session's oldest dangerous-command prompt (the one Hermes answers first), because Hermes also answers
+    those before a confirmation; a confirmation nobody answered must not take the retirement from it.
+    """
     cards = _approval_cards.get(session_key)
     if not cards:
-        return None
+        return _confirm_cards.pop(session_key, None)
     card = cards.pop(0)
     if not cards:
         del _approval_cards[session_key]
