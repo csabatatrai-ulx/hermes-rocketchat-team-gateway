@@ -4,6 +4,15 @@
 
 This plugin is the wire between Hermes and Rocket.Chat, and nothing else. Registering no tools is a design decision that matches Hermes's own messaging adapters, none of which registers agent tools. Hermes's platform guide also says plugins "must not register an equivalent model surface that lets the agent initiate outbound messages on its own". Capabilities such as searching a room belong to tools the agent reaches over MCP, where they work from every channel and can be permissioned separately.
 
+To give the agent Rocket.Chat capabilities, connect an MCP server. Rocket.Chat 8.8 and later ships a native one (Enterprise plans with the AI add-on; alpha), and community servers exist:
+
+```bash
+hermes mcp add rocketchat --url https://chat.example.com/api/v1/mcp   # authentication: see Rocket.Chat's MCP documentation
+hermes config set platform_toolsets.rocketchat '[rocketchat]'
+```
+
+With the optional [signed asker token](security.md#asker-token), such a server knows who is really asking.
+
 ## Message flow
 
 Two inbound paths, one decision function, one outbound path. Both inbound paths build the same payload shape and end in the same pure `classify_inbound`, so their behaviour cannot drift apart.
