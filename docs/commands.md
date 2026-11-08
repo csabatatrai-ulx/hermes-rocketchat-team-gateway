@@ -10,7 +10,7 @@
 
 Hermes's admin gating (`allow_admin_from`) is off by default, so without a guard anyone mentioning the bot could run `/model`, `/yolo on` or `/restart` with full Hermes privileges. The plugin refuses **every `/word` that is not on its allowlist**, without asking Hermes what counts as a command. So a command, alias, plugin command, skill or quick command added later is refused from day one, and no Hermes change can open the guard.
 
-A refused word gets a reply naming the key that would allow it, with no model call. That includes text such as `/api returns 500, why?`, so the reply also says to resend it without the leading slash. A word containing another slash (`/etc/hosts`) is a path, not a command, and goes to the model.
+A refused word gets a reply naming the key that would allow it, with no model call. For a word the plugin does not document, such as the start of `/api returns 500, why?`, the reply also says to resend it without the leading slash and names the skill key. A word containing another slash (`/etc/hosts`) is a path, not a command, and goes to the model.
 
 As a second layer, a turn that Hermes itself would parse as a non-allowed command is marked `allow_gateway_control=False`, so any difference between the two parsers leaves the text as conversation.
 

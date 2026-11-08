@@ -21,6 +21,11 @@ TEXTS = {
         "because it would affect everyone else too. Approve once: `/approve`, deny: `/deny`."
     ),
     "builtin_command_blocked": (
+        "`/{command}` is not enabled over Rocket.Chat. An administrator can enable it with "
+        "`{env_key}=true` in .env, then restart the Hermes gateway."
+    ),
+    # A /word the plugin does not document: a newer Hermes command, a skill, or plain text.
+    "unknown_command_blocked": (
         "`/{command}` is not enabled over Rocket.Chat. To send it as a normal message, leave out the "
         "leading slash. An administrator can enable it with `{env_key}=true` in .env (`{skill_env_key}=true` "
         "for a skill), then restart the Hermes gateway."

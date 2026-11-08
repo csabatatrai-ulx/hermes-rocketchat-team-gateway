@@ -24,6 +24,7 @@ import os
 from typing import Any, Optional
 
 from .builtin_commands import (
+    BUILTIN_COMMANDS,
     PERSISTENT_APPROVAL_KEY,
     bang_to_slash,
     blocked_builtin_command,
@@ -304,7 +305,8 @@ class WebhookInboundMixin:
             await self._notify(
                 decision.channel_id,
                 user_text(
-                    "builtin_command_blocked",
+                    "builtin_command_blocked" if decision.builtin_command_name in BUILTIN_COMMANDS
+                    else "unknown_command_blocked",
                     command=typed,
                     env_key=f"ROCKETCHAT_ALLOW_BUILTIN_{decision.builtin_command_name.upper()}",
                     skill_env_key=f"ROCKETCHAT_ALLOW_SKILL_{typed.upper().replace('-', '_')}",

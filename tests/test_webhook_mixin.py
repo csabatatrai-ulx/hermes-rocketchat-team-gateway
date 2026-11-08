@@ -170,6 +170,29 @@ class TestHandleOutgoingWebhook(unittest.TestCase):
         self.assertIn("ROCKETCHAT_ALLOW_BUILTIN_RELOAD_MCP=true", text)
         self.assertNotIn("RELOAD-MCP", text)
 
+    def _notice_for(self, text):
+        instance = self._instance(_notify=AsyncMock())
+        instance._augment_and_handle = AsyncMock()
+
+        async def _run():
+            await instance._handle_outgoing_webhook(_FakeRequest(_payload(message_id="m-n", text=f"@{BOT} {text}")))
+            await asyncio.sleep(0)
+
+        asyncio.run(_run())
+        instance._augment_and_handle.assert_not_awaited()
+        return instance._notify.await_args.args[1]
+
+    def test_a_documented_command_gets_the_short_notice(self):
+        text = self._notice_for("/yolo on")
+        self.assertIn("ROCKETCHAT_ALLOW_BUILTIN_YOLO=true", text)
+        self.assertNotIn("SKILL", text)
+
+    def test_an_unknown_word_suggests_plain_text_and_names_both_keys(self):
+        text = self._notice_for("/api returns 500")
+        self.assertIn("leave out the leading slash", text)
+        self.assertIn("ROCKETCHAT_ALLOW_BUILTIN_API=true", text)
+        self.assertIn("ROCKETCHAT_ALLOW_SKILL_API=true", text)
+
     def test_persistent_approval_is_refused_and_never_reaches_hermes(self):
         # "Always approve" would write to the gateway's whole config
         # (approvals.destructive_slash_confirm: false) and affect everyone.
