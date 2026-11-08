@@ -40,11 +40,11 @@ hide:
 
 <div class="video-frame">
   <video controls preload="metadata" playsinline poster="images/demo-poster.jpg">
-    <source src="https://github.com/user-attachments/assets/dec65feb-edb1-4b6d-bf28-bd89ed3e61be" type="video/mp4">
+    <source src="https://github.com/user-attachments/assets/c168f5ea-d306-498f-9ffc-d95905caa14b" type="video/mp4">
     <a href="https://github.com/csabatatrai-ulx/hermes-rocketchat-team-gateway#readme">Watch the demo on GitHub</a>
   </video>
 </div>
-<p class="caption">An 85-second real run: a real Rocket.Chat, the real gateway and a real model. Nothing is staged.</p>
+<p class="caption">An 86-second real run: a real Rocket.Chat, the real gateway and a real model. Nothing is staged.</p>
 
 ## Why teams use it
 
