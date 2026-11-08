@@ -97,6 +97,12 @@ The plugin only carries messages. Sessions, the agent and approvals stay in Herm
 hermes plugins install rocketchat-team-gateway --enable
 ```
 
+Until the [catalog entry](https://github.com/NousResearch/hermes-agent/pulls?q=rocketchat-team-gateway) is merged, install it straight from this repository:
+
+```bash
+hermes plugins install csabatatrai-ulx/hermes-rocketchat-team-gateway --enable
+```
+
 ### 3. Configure
 
 Run `hermes gateway setup` and choose Rocket.Chat. The wizard checks the credentials against the server before saving them. Or put the settings in `~/.hermes/.env` (`chmod 600`):
