@@ -115,6 +115,64 @@ flowchart LR
 
 The plugin only carries messages. Sessions, the agent and approvals stay in Hermes, and room access for the agent belongs in an MCP server. See [architecture](docs/architecture.md).
 
+<details>
+<summary><b>A question and its answer</b>, step by step</summary>
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor A as Alice
+    participant RC as Rocket.Chat
+    participant P as Plugin
+    participant H as Hermes core
+    A->>RC: @hermes when is the release?
+    RC-->>P: DDP stream-room-messages
+    P->>P: classify_inbound<br/>mention, allowlist, dedup, command guard
+    P->>RC: react 👀 (acknowledged)
+    P->>RC: REST history since Alice's previous mention
+    P->>H: MessageEvent<br/>text, room context, files, Alice's session key
+    Note over H: session, model, tools, approvals
+    H->>P: send(reply, reply_to)
+    P->>P: record in the outbound duplicate guard
+    P->>RC: REST postMessage<br/>quote of the question + @alice
+    P->>RC: remove 👀
+    RC-->>A: the answer, in the thread if asked in one
+```
+
+</details>
+
+<details>
+<summary><b>A dangerous command and its buttons</b>: why another person's click runs nothing</summary>
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor A as Alice
+    actor B as Bob
+    participant RC as Rocket.Chat
+    participant P as Plugin
+    participant H as Hermes core
+    A->>RC: @hermes delete the old build
+    RC-->>P: mention
+    P->>H: MessageEvent (Alice's session)
+    H->>P: _send_exec_approval_prompt
+    P->>RC: card with Allow Once / Deny buttons
+    B->>RC: clicks Allow Once
+    RC-->>P: "@hermes /approve" from Bob
+    P->>H: /approve in Bob's session
+    H->>P: No pending command to approve
+    P->>RC: reply to Bob, nothing runs
+    A->>RC: clicks Allow Once
+    RC-->>P: "@hermes /approve" from Alice
+    P->>H: /approve in Alice's session
+    Note over H: the command runs
+    P->>RC: replace the card: "Answered by @alice"
+    H->>P: result
+    P->>RC: answer to Alice
+```
+
+</details>
+
 ## Quick start
 
 ### 1. Prepare Rocket.Chat
