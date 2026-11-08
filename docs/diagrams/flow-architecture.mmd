@@ -1,0 +1,25 @@
+flowchart TB
+    RC(["`**Rocket.Chat**`"])
+    DDP["`DDP WebSocket
+*default*`"]
+    WH["`Outgoing webhook
+*127.0.0.1 + secret*`"]
+    CL["`**classify_inbound**
+mention · allowlist
+dedup · command guard`"]
+    TURN["`**Build the turn**
+room context · files`"]
+    H(["`**Hermes core**`"])
+    SEND["`**send**
+duplicate guard
+quote · buttons`"]
+    RC --> DDP --> CL
+    RC --> WH --> CL
+    CL --> TURN -- "MessageEvent" --> H -- "reply" --> SEND
+    SEND -- "REST" --> RC
+    classDef rc fill:#142c86,stroke:#142c86,color:#fff
+    classDef plug fill:#3a5bd9,stroke:#3a5bd9,color:#fff
+    classDef io fill:#6b82d6,stroke:#6b82d6,color:#fff
+    class RC,H rc
+    class CL,TURN,SEND plug
+    class DDP,WH io

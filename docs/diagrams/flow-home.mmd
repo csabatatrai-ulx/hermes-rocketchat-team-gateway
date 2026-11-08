@@ -1,0 +1,20 @@
+flowchart LR
+    RC(["`**Rocket.Chat**
+rooms · threads · DMs`"])
+    D["`**Decide**
+mention · allowlist
+dedup · command guard`"]
+    B["`**Build the turn**
+room context
+attachments`"]
+    H(["`**Hermes Agent**
+sessions · approvals
+agent · tools`"])
+    S["`**Send**
+quote · mention
+approval buttons`"]
+    RC -- "DDP or webhook" --> D --> B -- "MessageEvent" --> H -- "reply" --> S -- "REST" --> RC
+    classDef plugin fill:#3a5bd9,stroke:#3a5bd9,color:#ffffff
+    classDef outer fill:#142c86,stroke:#142c86,color:#ffffff
+    class D,B,S plugin
+    class RC,H outer

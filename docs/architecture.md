@@ -9,7 +9,9 @@ This plugin is the wire between Hermes and Rocket.Chat, and nothing else. Regist
 Two inbound paths, one decision function, one outbound path. Both inbound paths build the same payload shape and end in the same pure `classify_inbound`, so their behaviour cannot drift apart.
 
 <figure class="diagram narrow" markdown>
+
 ![Rocket.Chat reaches classify_inbound over the DDP WebSocket or an outgoing webhook; the turn goes to Hermes core as a MessageEvent; the reply goes through send and back to Rocket.Chat over REST.](images/flow-architecture.svg)
+
 </figure>
 
 Cron delivery without a running gateway takes a separate, REST-only path: `standalone_send`, which Hermes calls from its own process.
@@ -71,6 +73,40 @@ sequenceDiagram
 ```
 
 The buttons send exactly what a person could type, so the allowlist, the command guard, Hermes's admin lists and the session key apply to a click unchanged. There is no separate authorization path to get wrong.
+
+## C4 model
+
+The model is kept as [Structurizr DSL](https://github.com/csabatatrai-ulx/hermes-rocketchat-team-gateway/blob/main/docs/diagrams/c4/workspace.dsl), so the three views below come from one source.
+
+### System context
+
+Who uses it and what it talks to. The conversation stays on the organization's own Rocket.Chat; only model and tool calls leave it, to the providers the administrator chooses.
+
+<figure class="c4" markdown>
+
+![C4 system context of the Rocket.Chat Team Gateway](images/c4-context.svg)
+
+</figure>
+
+### Containers
+
+What runs and what it writes. The plugin lives inside the Hermes gateway process; its only files are the duplicate-suppression state.
+
+<figure class="c4" markdown>
+
+![C4 container view of the Rocket.Chat Team Gateway](images/c4-containers.svg)
+
+</figure>
+
+### Components
+
+The plugin's parts inside the gateway, and the modules that implement them.
+
+<figure class="c4" markdown>
+
+![C4 component view of the plugin inside the Hermes gateway](images/c4-components.svg)
+
+</figure>
 
 ## Modules
 
