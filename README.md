@@ -99,6 +99,7 @@ Every number below comes from a run, not from a claim. The live runs used Rocket
 | Refused commands such as `/yolo`, `/tools`, `/cron` and unknown `/words` | 0 model calls |
 | Real model (Nous Portal): room context, identity, threads, long answers, approval | Pass |
 | Personal assistant, a second Hermes with the `personal` preset and a real model: DM questions, memory across sessions, preset commands, `/sethome` and a delivered reminder, `/yolo` refused, other people and rooms ignored | 19 / 19 |
+| Fully local: the same real-model checks against a self-hosted open-weight model on vLLM, no cloud model service (team bot: room context, identity, threads, long answers, approval; personal assistant: all of the above) | 11 / 11 and 19 / 19 |
 
 ### How these were measured
 
@@ -106,7 +107,7 @@ Every number below comes from a run, not from a claim. The live runs used Rocket
 - **Live runs** use a real Rocket.Chat 8.9.1 in Docker (with MongoDB and NATS), the official Hermes Agent image and this plugin exactly as committed. Test users post through the Rocket.Chat REST API, and every button is clicked by Chrome in the Rocket.Chat web client, signed in as the person who clicks.
 - **Each check asserts an outcome you could see yourself**: the answer arrives in the right room or thread and mentions its asker; a dangerous command's file is still on disk after another person's click and gone only after the asker's; a refused command produces no request at the model endpoint (a recording stub model counts them).
 - **Restarts and outages** are real: the gateway container is stopped, or its connection to Rocket.Chat is cut, while people keep writing, then started again.
-- **Real-model runs** use Nous Portal. The personal assistant run uses a second Hermes instance with its own bot account.
+- **Real-model runs** use Nous Portal, and again a self-hosted model served by vLLM on an on-premises GPU. The personal assistant run uses a second Hermes instance with its own bot account.
 - **The demo video** is recorded from such a run; nothing in it is mocked.
 
 The live-run scripts depend on a local test server and are not in this repository; [`try/`](try/README.md) sets up the same kind of environment for you to repeat any of it by hand.
