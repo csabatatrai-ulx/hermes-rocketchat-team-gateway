@@ -1,0 +1,98 @@
+site_name: Rocket.Chat Team Gateway
+site_description: Rocket.Chat platform adapter for Hermes Agent, built for shared team rooms.
+site_url: https://csabatatrai-ulx.github.io/hermes-rocketchat-team-gateway/
+repo_url: https://github.com/csabatatrai-ulx/hermes-rocketchat-team-gateway
+repo_name: hermes-rocketchat-team-gateway
+edit_uri: edit/main/docs/
+copyright: Copyright 2026 ULX Kft. &middot; Developed by Csaba A. Tátrai &middot; Apache-2.0
+
+theme:
+  name: material
+  language: en
+  icon:
+    logo: material/rocket-launch-outline
+    repo: fontawesome/brands/github
+  favicon: images/favicon.svg
+  font:
+    text: Inter
+    code: JetBrains Mono
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle: {icon: material/weather-night, name: Switch to dark mode}
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle: {icon: material/weather-sunny, name: Switch to light mode}
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.footer
+    - navigation.instant
+    - navigation.tracking
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/extra.js
+
+extra:
+  generator: false
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/csabatatrai-ulx/hermes-rocketchat-team-gateway
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - def_list
+  - tables
+  - toc: {permalink: true}
+  - pymdownx.details
+  - pymdownx.highlight: {anchor_linenums: true}
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed: {alternate_style: true}
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+        - name: flow
+          class: mermaid flow
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.snippets: {base_path: ["."], check_paths: true}
+
+nav:
+  - Home: index.md
+  - Get started:
+      - Try it locally: try.md
+      - Install on your server: getting-started.md
+  - Guide:
+      - Sessions and context: sessions-and-context.md
+      - Commands and approvals: commands.md
+      - Attachments: attachments.md
+  - Operate:
+      - Configuration: configuration.md
+      - Deployment: deployment.md
+      - Troubleshooting: troubleshooting.md
+  - Security: security.md
+  - Reference:
+      - Architecture: architecture.md
+      - Compatibility: compatibility.md
+      - Testing and evidence: evidence.md
+      - Development: development.md
+      - Changelog: changelog.md
+  - About: about.md
