@@ -33,6 +33,31 @@
 .stats strong { display: block; font-size: 1.35rem; color: var(--md-accent-fg-color); }
 .stats span { font-size: .68rem; color: var(--md-default-fg-color--light); }
 @media (max-width: 760px) { .stats { grid-template-columns: repeat(2, 1fr); } .hero h1 { font-size: 1.8rem; } }
+
+/* Home page header over the looping Hermes artwork. The poster shows at once; the video loads after the
+   page (javascripts/extra.js) and never on small screens, with reduced motion or with data saver. */
+.hero--art { position: relative; isolation: isolate; overflow: hidden; border-radius: 18px; margin-top: 1rem;
+  padding: 3.2rem 2.6rem 2.6rem; min-height: 25rem; background: #0b1747; color: #fff;
+  box-shadow: 0 22px 60px rgba(8, 18, 70, .28); }
+.hero--art .hero-bg { position: absolute; z-index: -2; top: 0; left: 22%; width: 100%; height: 100%;
+  object-fit: cover; object-position: 50% 40%; pointer-events: none; }
+.hero--art::before { content: ""; position: absolute; inset: 0; z-index: -1;
+  background: linear-gradient(90deg, #0b1747 0%, #0b1747 24%, rgba(11, 23, 71, .9) 40%, rgba(11, 23, 71, .45) 70%,
+  rgba(11, 23, 71, .25) 100%); }
+.hero--art .eyebrow { color: #ffcf3d; }
+.md-content__inner:has(.hero--art) > .md-content__button { display: none; }
+.md-typeset .hero--art h1 { color: #fff; max-width: 32rem; text-shadow: 0 2px 18px rgba(0, 0, 0, .45); }
+.hero--art .lead { color: #dbe3fb; max-width: 34rem; }
+[data-md-color-scheme] .md-typeset .hero--art .md-button:not(.md-button--primary) { color: #fff; border-color: rgba(255, 255, 255, .55); }
+[data-md-color-scheme] .md-typeset .hero--art .md-button:not(.md-button--primary):hover { background: rgba(255, 255, 255, .14);
+  border-color: #fff; color: #fff; }
+[data-md-color-scheme] .md-typeset .hero--art .md-button--primary { background: #ffcf3d; border-color: #ffcf3d; color: #10184a; }
+[data-md-color-scheme] .md-typeset .hero--art .md-button--primary:hover { background: #ffd95e; border-color: #ffd95e; color: #10184a; }
+@media (max-width: 760px) {
+  .hero--art { padding: 2.2rem 1.3rem 1.8rem; min-height: 0; }
+  .hero--art .hero-bg { left: 0; opacity: .55; }
+  .hero--art::before { background: rgba(11, 23, 71, .72); }
+}
 .md-typeset .grid.cards > ul > li { border-radius: 12px; }
 
 .md-typeset .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -59,9 +84,9 @@
 .md-typeset figure.diagram { margin: 1.2rem 0; width: 100%; max-width: 100%; display: block; }
 .md-typeset figure.diagram img { width: 100%; height: auto; }
 .md-typeset figure.diagram.narrow img { max-width: 560px; margin: 0 auto; display: block; }
-.md-typeset .ulx-logo { display: inline-block; margin: .4rem 0 .2rem; border-radius: 12px; overflow: hidden;
+.md-typeset .ulx-logo { display: inline-block; max-width: 100%; margin: .4rem 0 .2rem; border-radius: 12px; overflow: hidden;
   box-shadow: 0 10px 30px rgba(16, 32, 92, .18); }
-.md-typeset .ulx-logo img { display: block; }
+.md-typeset .ulx-logo img { display: block; width: 560px; max-width: 100%; height: auto; }
 .md-typeset figure.c4 { margin: 1rem 0 1.4rem; width: 100%; max-width: 100%; display: block; }
 .md-typeset figure.c4 img { width: 100%; height: auto; background: #ffffff; border-radius: 12px; padding: .4rem;
   border: 1px solid var(--md-default-fg-color--lightest); }

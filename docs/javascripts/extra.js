@@ -36,3 +36,24 @@ document$.subscribe(function () {
     el.removeAttribute("data-user");
   });
 });
+
+// The home page header plays the Hermes artwork loop. Only after the page has loaded, never on small
+// screens, with reduced motion or data saver (the poster stays), and paused while scrolled out of view.
+document$.subscribe(function () {
+  var video = document.querySelector(".hero-bg");
+  if (!video) return;
+  var calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+    window.matchMedia("(max-width: 760px)").matches ||
+    (navigator.connection && navigator.connection.saveData);
+  if (calm) return;
+  function start() {
+    video.querySelectorAll("source[data-src]").forEach(function (s) { s.src = s.dataset.src; s.removeAttribute("data-src"); });
+    video.load();
+    if (!("IntersectionObserver" in window)) { video.play().catch(function () {}); return; }
+    new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) { video.play().catch(function () {}); } else { video.pause(); } });
+    }).observe(video);
+  }
+  if (document.readyState === "complete") { setTimeout(start, 300); }
+  else { window.addEventListener("load", function () { setTimeout(start, 300); }, { once: true }); }
+});

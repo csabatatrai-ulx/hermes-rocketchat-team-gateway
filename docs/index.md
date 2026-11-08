@@ -5,7 +5,12 @@ hide:
   - toc
 ---
 
-<div class="hero" markdown>
+<div class="hero hero--art" markdown>
+
+<video class="hero-bg" muted loop playsinline preload="none" poster="images/hero-poster.jpg" aria-hidden="true" tabindex="-1">
+  <source data-src="images/hero-loop.webm" type="video/webm">
+  <source data-src="images/hero-loop.mp4" type="video/mp4">
+</video>
 
 <p class="eyebrow">Hermes Agent platform plugin</p>
 

@@ -7,7 +7,7 @@ Rocket.Chat Team Gateway is a [Hermes Agent](https://hermes-agent.nousresearch.c
 Developed by **Csaba A. Tátrai** at ULX.
 
 <a class="ulx-logo" href="https://ulx.hu/" title="ULX: enterprise open source IT">
-  <img src="../images/ulx-logo.png" alt="ULX: enterprise open source IT" width="355">
+  <img src="../images/ulx-logo.png" alt="ULX: enterprise open source IT" width="560">
 </a>
 
 [ULX](https://ulx.hu/) is a Hungarian enterprise open source IT company.
