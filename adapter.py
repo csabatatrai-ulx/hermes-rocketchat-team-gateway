@@ -47,6 +47,7 @@ from .config import (
     MAX_MESSAGE_LENGTH,
     RocketChatConfig,
     load_config,
+    shared_memory_risk,
 )
 from .dedup import (
     delivery_fingerprint_source,
@@ -176,6 +177,7 @@ class RocketChatAdapter(
         # the hot path.
         cfg = _config_from_platform(config)
         self._cfg: RocketChatConfig = cfg
+        self._warn_if_memory_is_shared(cfg)
 
 
         self._base_url: str = cfg.base_url
@@ -665,6 +667,25 @@ class RocketChatAdapter(
         message_id = posted_message_id(answer)
         remember_approval_card(prompt.session_key, prompt.chat_id, message_id, text, tmid)
         return SendResult(success=True, message_id=message_id)
+
+    @staticmethod
+    def _warn_if_memory_is_shared(cfg: RocketChatConfig) -> None:
+        """One startup warning when Hermes's memory is shared by several people (config.shared_memory_risk)."""
+        if not cfg.shared_memory_warning:
+            return
+        try:
+            from hermes_cli.config import read_raw_config_readonly
+            stores = shared_memory_risk((read_raw_config_readonly() or {}).get("memory"), cfg)
+        except Exception:  # noqa: BLE001 - only a hint; an unreadable config must not stop the adapter
+            return
+        if stores:
+            logger.warning(
+                "Rocket.Chat: Hermes's built-in memory (%s) is on and several people can reach this bot, so "
+                "what one person tells it can appear in another person's answer. Set memory.memory_enabled "
+                "and memory.user_profile_enabled to false in config.yaml for a shared bot, or "
+                "ROCKETCHAT_SHARED_MEMORY_WARNING=false to silence this.",
+                ", ".join(stores),
+            )
 
     @property
     def typed_command_prefix(self) -> str:  # type: ignore[override]

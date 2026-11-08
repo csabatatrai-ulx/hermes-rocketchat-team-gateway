@@ -44,6 +44,7 @@ Every setting is a `ROCKETCHAT_*` environment variable, normally in `~/.hermes/.
 | `ROCKETCHAT_WHOAMI_COMMAND` | `/whoami` | Its command word |
 | `ROCKETCHAT_OUTBOUND_FILES` | `true` | Upload files the agent sends with `MEDIA:/path` |
 | `ROCKETCHAT_APPROVAL_BUTTONS` | `true` | Accept and deny buttons on a dangerous-command prompt |
+| `ROCKETCHAT_SHARED_MEMORY_WARNING` | `true` | A startup warning when Hermes's built-in memory is on although several people can reach the bot. Only a log line |
 
 ## Room context
 

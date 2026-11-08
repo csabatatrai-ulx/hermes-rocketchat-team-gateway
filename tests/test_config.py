@@ -11,6 +11,7 @@ import unittest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import (  # noqa: E402
+    shared_memory_risk,
     DEFAULT_WEBHOOK_HOST,
     DEFAULT_WEBHOOK_PORT,
     RocketChatConfig,
@@ -497,3 +498,31 @@ class StartupCatchupConfigTests(unittest.TestCase):
             ROCKETCHAT_STARTUP_CATCHUP_MAX_DISPATCHES="0",
         ))
         self.assertEqual((cfg.startup_catchup_max_seconds, cfg.startup_catchup_max_dispatches), (0, 1))
+
+
+class SharedMemoryRiskTests(unittest.TestCase):
+    """Hermes's built-in memory on a bot that several people can reach (config.shared_memory_risk)."""
+
+    def cfg(self, **env):
+        return load_config({}, dict(MINIMAL_ENV, **env))
+
+    def test_defaults_are_on_and_a_room_bot_is_shared(self):
+        self.assertEqual(shared_memory_risk(None, self.cfg()), ("memory_enabled", "user_profile_enabled"))
+
+    def test_both_off_is_quiet(self):
+        off = {"memory_enabled": False, "user_profile_enabled": "false"}
+        self.assertEqual(shared_memory_risk(off, self.cfg()), ())
+
+    def test_one_store_on_is_named(self):
+        self.assertEqual(shared_memory_risk({"memory_enabled": False}, self.cfg()), ("user_profile_enabled",))
+
+    def test_a_private_dm_only_bot_for_one_person_is_quiet(self):
+        cfg = self.cfg(ROCKETCHAT_DM_ONLY="true", ROCKETCHAT_ALLOWED_USERS="u1")
+        self.assertEqual(shared_memory_risk(None, cfg), ())
+        cfg = self.cfg(ROCKETCHAT_DM_ONLY="true", ROCKETCHAT_ALLOWED_USERS="u1,u2")
+        self.assertTrue(shared_memory_risk(None, cfg))
+
+    def test_the_warning_can_be_switched_off(self):
+        self.assertTrue(self.cfg().shared_memory_warning)
+        self.assertFalse(self.cfg(ROCKETCHAT_SHARED_MEMORY_WARNING="false").shared_memory_warning)
+

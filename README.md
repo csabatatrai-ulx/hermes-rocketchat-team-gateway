@@ -122,6 +122,8 @@ Decide who may talk to the bot: `ROCKETCHAT_ALLOWED_USERS`, Hermes pairing, or o
 ```bash
 hermes config set platform_toolsets.rocketchat '[my-mcp-server]'   # or [] for none
 hermes config set approvals.mode manual   # a person answers every dangerous command
+hermes config set memory.memory_enabled false        # one memory would be shared by everyone
+hermes config set memory.user_profile_enabled false
 ```
 
 Hermes's default `smart` mode lets a helper model approve flagged commands, so no one is asked.

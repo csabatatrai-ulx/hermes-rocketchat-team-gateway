@@ -23,7 +23,7 @@ The adapter cannot set Hermes's configuration. These are yours:
 
 - **Tools.** Without `platform_toolsets.rocketchat`, Hermes gives the platform its whole core toolset. Always set an explicit list on a shared bot.
 - **Approvals.** Hermes's default `approvals.mode: smart` lets a helper model approve flagged commands without asking anyone. Use `manual` on a shared bot.
-- **Memory.** Memory is per Hermes home, so a shared bot shares it among all users unless disabled.
+- **Memory.** Hermes keeps one memory per Hermes home, and it is on by default, so on a shared bot what one person tells it can surface in another person's answer. Turn off `memory.memory_enabled` and `memory.user_profile_enabled` for a shared bot. The adapter logs a warning at startup when they are on and more than one person can reach the bot (`ROCKETCHAT_SHARED_MEMORY_WARNING=false` silences it).
 - **Prompt injection.** Room context is marked as context, but it is still text a model reads. Give the bot only the tools its users may trigger, and keep approvals on for consequential ones.
 
 Use a dedicated bot account with minimal room memberships, never an administrator token.

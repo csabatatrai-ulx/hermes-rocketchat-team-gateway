@@ -435,6 +435,9 @@ class RocketChatConfig:
     # ROCKETCHAT_APPROVAL_BUTTONS: accept and deny buttons on a dangerous-command prompt
     # (approval_buttons.py). When off, Hermes sends its plain-text /approve prompt.
     approval_buttons: bool = True
+    # A startup warning when Hermes's built-in memory is on although several people can reach the bot
+    # (shared_memory_risk). Only a log line; it changes nothing.
+    shared_memory_warning: bool = True
     # ROCKETCHAT_TRANSPORT (see ddp_transport_mixin.py): "ddp" (default: inbound only
     # through the Realtime API, the webhook HTTP server does not start) or "webhook"
     # (Outgoing Webhook HTTP listener, the fallback path). Either-or: the two cannot run
@@ -610,6 +613,7 @@ def load_config(
         # registration, when the ``config.yaml`` ``extra`` is not readable yet, so both
         # always see the same value.
         approval_buttons=_flag("approval_buttons", extra, env, True),
+        shared_memory_warning=_flag("shared_memory_warning", extra, env, True),
         outbound_files=as_bool(
             env.get("ROCKETCHAT_OUTBOUND_FILES", ""), default=True, name="ROCKETCHAT_OUTBOUND_FILES"
         ),
@@ -651,4 +655,21 @@ def load_config(
         ),
         dedup_state_dir=_resolve_dedup_state_dir(_pick("dedup_state_dir", extra, env), env),
         always_fresh_final_streaming=_flag("always_fresh_final_streaming", extra, env, False),
+    )
+
+
+def shared_memory_risk(memory_section: Any, cfg: "RocketChatConfig") -> Tuple[str, ...]:
+    """Hermes's built-in memory stores that are on while more than one person can reach the bot.
+
+    Hermes keeps one memory per Hermes home, and both stores default to on, so on a shared bot what one person
+    tells it can surface in another person's answer. Empty when the bot answers a single person only (DM-only
+    with one allowed user) or both stores are off.
+    """
+    single_person = cfg.dm_only and len(cfg.allowed_users) == 1 and not cfg.allow_all_users
+    if single_person:
+        return ()
+    section = memory_section if isinstance(memory_section, Mapping) else {}
+    return tuple(
+        key for key in ("memory_enabled", "user_profile_enabled")
+        if as_bool(section.get(key) if section.get(key) is not None else "", default=True)
     )
