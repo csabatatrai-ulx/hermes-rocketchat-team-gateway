@@ -86,6 +86,14 @@ The scripts for the live runs drive a local Rocket.Chat and are not part of this
 
 ## How it works
 
+### System context
+
+![C4 system context: team members chat in their own Rocket.Chat; Hermes Agent with this plugin receives mentions, calls the model provider and optional MCP servers, and answers in Rocket.Chat; an administrator configures it.](docs/images/c4-context.svg)
+
+The C4 container and component views, and the Structurizr DSL they come from, are in [architecture](docs/architecture.md#c4-model).
+
+### Message flow
+
 ```mermaid
 flowchart LR
     RC["<b>Rocket.Chat</b><br/>rooms, threads, DMs"]

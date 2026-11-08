@@ -5,3 +5,5 @@ __pycache__/
 .venv/
 .env
 CLAUDE.md
+docs/diagrams/c4/.structurizr/
+docs/diagrams/c4/workspace.json
