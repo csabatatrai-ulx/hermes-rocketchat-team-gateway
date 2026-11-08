@@ -28,6 +28,8 @@ Every number below comes from a run, not from a claim. The live runs used Rocket
 
 The live-run scripts depend on a local test server and are not in this repository; [Try it locally](try.md) sets up the same kind of environment for you to repeat any of it by hand.
 
+Building it also turned up two Hermes gateway bugs, reported upstream: [#148433](https://github.com/NousResearch/hermes-agent/issues/148433) (a shutdown during a redirected turn overwrites an already streamed reply) and [#149169](https://github.com/NousResearch/hermes-agent/issues/149169) (`/loop` and `/heartbeat` stay silent after a gateway restart until the chat gets a plain message).
+
 ## Continuous integration
 
 Every push runs the unit and contract tests and the catalog validator against two Hermes releases: the oldest the plugin supports and the newest tested live. The contract tests fail when a Hermes release removes or renames a member the adapter relies on, so a breaking change shows up in CI before it reaches a server.

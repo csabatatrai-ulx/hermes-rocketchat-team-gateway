@@ -10,7 +10,7 @@ A Rocket.Chat platform adapter for [Hermes Agent](https://hermes-agent.nousresea
 
 Supports **Rocket.Chat 8.7 – 9.x** from one code path. Requires **Hermes 0.22.3 or newer**.
 
-- **Standalone, as Hermes asks of third-party integrations.** It lives in its own repository and changes nothing in Hermes core, so keeping up with Rocket.Chat and Hermes releases is this project's job, not the Hermes maintainers'. It passes `hermes plugins validate` with no private core imports, and a contract test covers the Hermes interfaces it relies on.
+- **Standalone, as [Hermes asks of third-party integrations](https://github.com/NousResearch/hermes-agent/pull/4637#issuecomment-4950466375).** Rocket.Chat support is a long-standing request ([#3725](https://github.com/NousResearch/hermes-agent/issues/3725), [#94576](https://github.com/NousResearch/hermes-agent/issues/94576)), and the in-tree adapter for it was closed under that policy. This one lives in its own repository and changes nothing in Hermes core, so keeping up with Rocket.Chat and Hermes releases is this project's job, not the Hermes maintainers'. It passes `hermes plugins validate` with no private core imports, and a contract test covers the Hermes interfaces it relies on.
 - **Built for shared rooms.** Each person gets their own session and room context, Hermes commands are blocked over chat unless allowed, and only the person who asked can approve their dangerous command.
 - **Tested live.** 750+ unit tests in CI against the oldest supported and the newest Hermes release, plus end-to-end runs with the official Hermes 0.23.0 image against Rocket.Chat 8.9.1, including a restart, a network outage and real clicks on the approval buttons.
 
@@ -111,6 +111,8 @@ Every number below comes from a run, not from a claim. The live runs used Rocket
 - **The demo video** is recorded from such a run; nothing in it is mocked.
 
 The live-run scripts depend on a local test server and are not in this repository; [`try/`](try/README.md) sets up the same kind of environment for you to repeat any of it by hand.
+
+Building it also turned up two Hermes gateway bugs, reported upstream: [#148433](https://github.com/NousResearch/hermes-agent/issues/148433) (a shutdown during a redirected turn overwrites an already streamed reply) and [#149169](https://github.com/NousResearch/hermes-agent/issues/149169) (`/loop` and `/heartbeat` stay silent after a gateway restart until the chat gets a plain message).
 
 ## How it works
 
