@@ -12,7 +12,7 @@ Supports **Rocket.Chat 8.7 – 9.x** from one code path. Requires **Hermes 0.22.
 - **Built for shared rooms.** Each person gets their own session and room context, Hermes commands are blocked over chat unless allowed, and only the person who asked can approve their dangerous command.
 - **Tested live.** 750+ unit tests in CI against the oldest supported and the newest Hermes release, plus end-to-end runs with the official Hermes 0.23.0 image against Rocket.Chat 8.9.1, including a restart, a network outage and real clicks on the approval buttons.
 
-https://github.com/user-attachments/assets/7e9ceff4-9de5-46ef-9043-bea65a302d05
+https://github.com/user-attachments/assets/dec65feb-edb1-4b6d-bf28-bd89ed3e61be
 
 ## Try it in a few minutes
 
