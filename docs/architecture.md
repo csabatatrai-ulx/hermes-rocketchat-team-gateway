@@ -84,7 +84,9 @@ Who uses it and what it talks to. The conversation stays on the organization's o
 
 <figure class="c4" markdown>
 
-![C4 system context of the Rocket.Chat Team Gateway](images/c4-context.svg)
+[![C4 system context of the Rocket.Chat Team Gateway](images/c4-context.svg)](images/c4-context.svg)
+
+<figcaption>Click to open full size.</figcaption>
 
 </figure>
 
@@ -94,7 +96,9 @@ What runs and what it writes. The plugin lives inside the Hermes gateway process
 
 <figure class="c4" markdown>
 
-![C4 container view of the Rocket.Chat Team Gateway](images/c4-containers.svg)
+[![C4 container view of the Rocket.Chat Team Gateway](images/c4-containers.svg)](images/c4-containers.svg)
+
+<figcaption>Click to open full size.</figcaption>
 
 </figure>
 
@@ -104,7 +108,9 @@ The plugin's parts inside the gateway, and the modules that implement them.
 
 <figure class="c4" markdown>
 
-![C4 component view of the plugin inside the Hermes gateway](images/c4-components.svg)
+[![C4 component view of the plugin inside the Hermes gateway](images/c4-components.svg)](images/c4-components.svg)
+
+<figcaption>Click to open full size.</figcaption>
 
 </figure>
 
