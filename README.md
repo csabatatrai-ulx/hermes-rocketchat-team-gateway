@@ -18,7 +18,7 @@ https://github.com/user-attachments/assets/3a8107bc-dd71-4a02-9eed-7d476e32b55a
 
 ### ChatOps: a fix that waits for a human
 
-https://github.com/user-attachments/assets/3b9e3c53-9597-4b6e-ab4e-dd813bb0a465
+https://github.com/user-attachments/assets/13bf2138-55c0-4fbd-9e7d-f0fc7ff10732
 
 A simulated outage in a sandbox: the service, its logs and the alert are staged; what Hermes does, the commands it runs and the approvals are not.
 

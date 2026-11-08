@@ -50,7 +50,7 @@ hide:
 
 <div class="video-frame">
   <video controls preload="metadata" playsinline poster="images/ops-poster.jpg">
-    <source src="https://github.com/user-attachments/assets/3b9e3c53-9597-4b6e-ab4e-dd813bb0a465" type="video/mp4">
+    <source src="https://github.com/user-attachments/assets/13bf2138-55c0-4fbd-9e7d-f0fc7ff10732" type="video/mp4">
     <a href="https://github.com/csabatatrai-ulx/hermes-rocketchat-team-gateway#readme">Watch the ChatOps clip on GitHub</a>
   </video>
 </div>
