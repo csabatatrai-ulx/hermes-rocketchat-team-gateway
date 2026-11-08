@@ -127,15 +127,15 @@ sequenceDiagram
     participant H as Hermes core
     A->>RC: @hermes when is the release?
     RC-->>P: DDP stream-room-messages
-    P->>P: classify_inbound<br/>mention, allowlist, dedup, command guard
-    P->>RC: react 👀 (acknowledged)
+    P->>P: classify_inbound: mention, allowlist, dedup, command guard
+    P->>RC: react with eyes (acknowledged)
     P->>RC: REST history since Alice's previous mention
-    P->>H: MessageEvent<br/>text, room context, files, Alice's session key
+    P->>H: MessageEvent: text, room context, files, session key
     Note over H: session, model, tools, approvals
     H->>P: send(reply, reply_to)
     P->>P: record in the outbound duplicate guard
-    P->>RC: REST postMessage<br/>quote of the question + @alice
-    P->>RC: remove 👀
+    P->>RC: REST postMessage: quote of the question, @alice
+    P->>RC: remove the eyes reaction
     RC-->>A: the answer, in the thread if asked in one
 ```
 
