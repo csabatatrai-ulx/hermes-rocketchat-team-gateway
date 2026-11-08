@@ -112,7 +112,7 @@ Every number below comes from a run, not from a claim. The live runs used Rocket
 
 The live-run scripts depend on a local test server and are not in this repository; [`try/`](try/README.md) sets up the same kind of environment for you to repeat any of it by hand.
 
-Building it also turned up two Hermes gateway bugs, reported upstream: [#148433](https://github.com/NousResearch/hermes-agent/issues/148433) (a shutdown during a redirected turn overwrites an already streamed reply) and [#149169](https://github.com/NousResearch/hermes-agent/issues/149169) (`/loop` and `/heartbeat` stay silent after a gateway restart until the chat gets a plain message).
+Building it also turned up two Hermes gateway bugs, which the author reported upstream: [#148433](https://github.com/NousResearch/hermes-agent/issues/148433) (a shutdown during a redirected turn overwrites an already streamed reply) and [#149169](https://github.com/NousResearch/hermes-agent/issues/149169) (`/loop` and `/heartbeat` stay silent after a gateway restart until the chat gets a plain message).
 
 ## How it works
 
