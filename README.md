@@ -296,7 +296,7 @@ Choose [`rocketchat-platform`](https://github.com/HalfbitStudio/hermes-plugin-ro
 
 <a href="https://ulx.hu/"><img src="docs/images/ulx-logo.png" alt="ULX: enterprise open source IT" width="355"></a>
 
-Developed at [Ulx Kft.](https://ulx.hu/), an enterprise open source IT company, and released as open source with its permission.
+Developed by **Csaba A. Tátrai** ([LinkedIn](https://www.linkedin.com/in/csabatatrai-datascientist/)) at [Ulx Kft.](https://ulx.hu/), an enterprise open source IT company, and released as open source with its permission.
 
 ## License
 
