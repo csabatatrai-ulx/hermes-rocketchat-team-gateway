@@ -281,11 +281,20 @@ Then mention the bot in a room it belongs to, or send it a DM. `@hermes /whoami`
 | Logs | Message text from DMs is never logged, only ids and counts. |
 | Shell commands, self-update | None. |
 
-## Replacing the `rocketchat-platform` plugin
+## How it differs from `rocketchat-platform`
 
-This is an independent implementation that uses the same Hermes platform name, `rocketchat`, so `platform_toolsets.rocketchat`, `deliver=rocketchat` and `ROCKETCHAT_URL`, `ROCKETCHAT_TOKEN`, `ROCKETCHAT_USER_ID` and `ROCKETCHAT_ALLOWED_USERS` keep working. Enable only one of the two; the last one registered wins. Add `ROCKETCHAT_BOT_USERNAME`, then restart the gateway.
+The Hermes plugin catalog already has a Rocket.Chat plugin, [`rocketchat-platform`](https://github.com/HalfbitStudio/hermes-plugin-rocketchat). The two solve different problems: that one gives the agent Rocket.Chat tools; this one makes a room that many people share with one bot safe and understandable. Compared with `rocketchat-platform` 1.5.2:
 
-Choose [`rocketchat-platform`](https://github.com/HalfbitStudio/hermes-plugin-rocketchat) if you want Rocket.Chat tools inside the agent. Choose this one if you want a transport-only adapter and a shared-room experience; pair it with an MCP server for room access.
+| | `rocketchat-platform` | Rocket.Chat Team Gateway |
+|---|---|---|
+| Agent tools for Rocket.Chat (post, search, history, channels) | ✓ ten tools | – by design; pair it with an MCP server |
+| Context a mention carries | earlier messages of the thread, for a mention in a thread | what happened in the room since the asker's previous mention |
+| Who an answer is for | a plain reply, or a thread with `ROCKETCHAT_REPLY_MODE=thread` | each answer quotes its question and mentions its asker |
+| Hermes commands over chat | passed to Hermes | refused unless an administrator allows each one |
+| Dangerous commands | Hermes's text prompt | approval buttons that only the asker can use |
+| After a restart or an outage | reconnects | answers or reports the mentions it missed; no duplicate turns, even across restarts |
+
+Both register the Hermes platform name `rocketchat`, so enable only one; the last one registered wins. Switching keeps `ROCKETCHAT_URL`, `ROCKETCHAT_TOKEN`, `ROCKETCHAT_USER_ID`, `ROCKETCHAT_ALLOWED_USERS`, `platform_toolsets.rocketchat` and `deliver=rocketchat` working; add `ROCKETCHAT_BOT_USERNAME` and restart the gateway.
 
 ## Documentation
 
