@@ -1,6 +1,6 @@
 site_name: Rocket.Chat Team Gateway
 site_description: Rocket.Chat platform adapter for Hermes Agent, built for shared team rooms.
-site_url: https://csabatatrai-ulx.github.io/hermes-rocketchat-team-gateway/
+site_url: !ENV [SITE_URL, "https://csabatatrai-ulx.github.io/hermes-rocketchat-team-gateway/"]
 repo_url: https://github.com/csabatatrai-ulx/hermes-rocketchat-team-gateway
 repo_name: hermes-rocketchat-team-gateway
 edit_uri: edit/main/docs/
