@@ -15,7 +15,7 @@ ACTIONS = [("Allow once", "once", "primary"), ("Allow session", "session", ""),
 class ApprovalAttachmentTests(unittest.TestCase):
     def _buttons(self, allowed):
         attachments = approval_attachments(ACTIONS, "hermes", frozenset(allowed))
-        return attachments[0]["actions"] if attachments else []
+        return [b for row in attachments for b in row["actions"]]
 
     def test_default_allowlist_offers_accept_and_deny_only(self):
         buttons = self._buttons({"approve", "deny"})
@@ -25,6 +25,13 @@ class ApprovalAttachmentTests(unittest.TestCase):
         msgs = [b["msg"] for b in self._buttons({"approve", "deny", "always"})]
         self.assertIn("@hermes /approve session", msgs)
         self.assertIn("@hermes /approve always", msgs)
+
+    def test_more_than_two_buttons_go_two_per_row(self):
+        rows = approval_attachments(ACTIONS, "hermes", frozenset({"approve", "deny", "always"}))
+        self.assertEqual([len(r["actions"]) for r in rows], [2, 2])
+        self.assertEqual([b["text"] for r in rows for b in r["actions"]],
+                         ["Allow once", "Allow session", "Always", "Deny"])
+        self.assertEqual(len(approval_attachments(ACTIONS, "hermes", frozenset({"approve", "deny"}))), 1)
 
     def test_a_blocked_command_gets_no_button(self):
         self.assertEqual([b["msg"] for b in self._buttons({"deny"})], ["@hermes /deny"])
@@ -52,7 +59,7 @@ class IsApprovalAnswerTests(unittest.TestCase):
 
 class ConfirmAttachmentTests(unittest.TestCase):
     def _buttons(self, allowed):
-        return [(b["text"], b["msg"]) for b in confirm_attachments("hermes", frozenset(allowed))[0]["actions"]]
+        return [(b["text"], b["msg"]) for row in confirm_attachments("hermes", frozenset(allowed)) for b in row["actions"]]
 
     def test_always_gets_no_button_by_default(self):
         self.assertEqual(self._buttons({"approve", "deny", "cancel"}),

@@ -25,12 +25,24 @@ _CHOICES = {
 }
 
 
+# Buttons per row. Rocket.Chat lays out one attachment's buttons on a single line and cuts their labels short
+# ("Allow…") when they do not fit, which three or four buttons already do on a phone or beside a wide
+# message. Each row is its own attachment, so every label stays whole.
+_PER_ROW = 2
+
+
+def _rows(buttons: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """The buttons as attachments of at most ``_PER_ROW`` each, in order; ``[]`` for no buttons."""
+    return [{"button_alignment": "horizontal", "actions": buttons[i:i + _PER_ROW]}
+            for i in range(0, len(buttons), _PER_ROW)]
+
+
 def approval_attachments(
     actions: Iterable[Tuple[str, str, str]],
     bot_username: str,
     allowed_commands: FrozenSet[str],
 ) -> List[Dict[str, Any]]:
-    """The attachment carrying one button per offered choice, or ``[]`` when none is allowed.
+    """Attachments carrying one button per offered choice, two per row, or ``[]`` when none is allowed.
 
     ``actions`` are Hermes's ``(label, choice, style)`` rows. A choice the command guard would refuse gets no
     button, so persistent approval is not offered unless ``ROCKETCHAT_ALLOW_BUILTIN_ALWAYS`` is on. The mention
@@ -49,7 +61,7 @@ def approval_attachments(
             "msg_in_chat_window": True,
             "msg_processing_type": "sendMessage",
         })
-    return [{"button_alignment": "horizontal", "actions": buttons}] if buttons else []
+    return _rows(buttons)
 
 
 def confirm_attachments(bot_username: str, allowed_commands: FrozenSet[str]) -> List[Dict[str, Any]]:
@@ -70,7 +82,7 @@ def confirm_attachments(bot_username: str, allowed_commands: FrozenSet[str]) -> 
         for label, command in (("Approve Once", "approve"), ("Always Approve", "always"), ("Cancel", "deny"))
         if command in allowed_commands
     ]
-    return [{"button_alignment": "horizontal", "actions": buttons}] if buttons else []
+    return _rows(buttons)
 
 
 def confirm_body(message: str) -> str:

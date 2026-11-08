@@ -88,7 +88,7 @@ Every number below comes from a run, not from a claim. The live runs used Rocket
 
 | What was checked | Result |
 |---|---|
-| Unit and contract tests in CI, on Hermes 0.22.3 (oldest supported) and 0.23.0 | 769 pass on both |
+| Unit and contract tests in CI, on Hermes 0.22.3 (oldest supported) and 0.23.0 | 770 pass on both |
 | `hermes plugins validate --install-deps` | Passes, no private core imports |
 | End-to-end scenarios: mentions, threads, DMs, files both ways, concurrent askers, the command guard | 39 / 39 |
 | Approval buttons clicked in a room and a thread, including another person's click doing nothing | 16 / 16 |
