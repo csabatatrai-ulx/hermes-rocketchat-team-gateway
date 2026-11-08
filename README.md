@@ -45,7 +45,7 @@ Open **http://localhost:3000**, sign in as `alice` / `hermes-demo`, and say `@he
 **It guards a room with many users.**
 
 - Every `/word` is refused over chat unless allowed, without asking Hermes what is a command. A new command in a future Hermes is refused from day one, and no Hermes change can open the guard. Otherwise anyone in a room could run `/model`, `/yolo` or `/restart`.
-- With `approvals.mode: manual`, a dangerous command waits for a click: accept and deny buttons appear on the prompt, and each click runs as the authenticated person who made it. Confirming `/new` works the same way.
+- With `approvals.mode: manual`, a dangerous command waits for a click: accept and deny buttons appear on the prompt, and each click runs as the authenticated person who made it. Confirming `/new` works the same way. Which commands count as dangerous is Hermes's call, and its list has gaps; see [what approvals cover](docs/security.md#what-it-does-not-do).
 - Skill commands have their own allowlist, and persistent approvals that would write to the shared config are refused.
 - A bot answers only in rooms it is a member of, so nobody can pull it into a channel with a mention.
 - Lines from senders outside the allowlist are marked `[unverified sender]` in the room context, and a multi-line message cannot forge a context marker.
