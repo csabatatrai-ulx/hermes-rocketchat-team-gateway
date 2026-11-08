@@ -14,6 +14,7 @@ Every number below comes from a run, not from a claim. The live runs used Rocket
 | Cron delivery through the running gateway, and with the gateway stopped | 2 / 2 |
 | Refused commands such as `/yolo`, `/tools`, `/cron` and unknown `/words` | 0 model calls |
 | Real model (Nous Portal): room context, identity, threads, long answers, approval | Pass |
+| Personal assistant, a second Hermes with the `personal` preset and a real model: DM questions, memory across sessions, preset commands, `/sethome` and a delivered reminder, `/yolo` refused, other people and rooms ignored | 19 / 19 |
 
 ## Continuous integration
 

@@ -34,22 +34,7 @@ For deployment-specific tool guidance, use `platform_hints.rocketchat.append` ra
 
 ## A personal assistant
 
-The same plugin runs as one person's assistant in their DMs, by configuration only.
-
-!!! warning "One Hermes instance and one bot account per person"
-    A Hermes instance has one owner's sessions, memory, model choice and cron jobs, and the `personal` preset lets its user switch models, browse and resume sessions and set the cron delivery target. If several people want a personal assistant, run a separate Hermes instance (or profile) with its own Rocket.Chat bot account for each of them. Never use the `personal` preset on a bot that more than one person can talk to.
-
-Configuration for the owner's instance:
-
-```dotenv
-ROCKETCHAT_DM_ONLY=true
-ROCKETCHAT_ALLOWED_USERS=<owner user id>
-ROCKETCHAT_ALLOW_BUILTIN_PRESET=personal
-ROCKETCHAT_STARTUP_GREETING=false
-ROCKETCHAT_HOME_CHANNEL=<owner's DM room id>
-```
-
-`ROCKETCHAT_ALLOWED_USERS` holds the owner alone and `ROCKETCHAT_DM_ONLY` keeps the bot out of rooms. The preset opens session management (`/sessions`, `/resume`, `/branch`, `/undo`), `/model`, `/reasoning`, `/bg`, `/sethome`, `/loop`, `/goal`, `/plan` and similar commands; the full list is in [commands](commands.md). `/yolo`, `/restart`, `/update`, `/approvals`, `/pause`, `/learn`, `/debug` and `/platform` are in no preset and need their own `ROCKETCHAT_ALLOW_BUILTIN_<NAME>=true` key.
+The same plugin runs as one person's assistant in their DMs, by configuration only: `ROCKETCHAT_DM_ONLY=true`, the owner alone in `ROCKETCHAT_ALLOWED_USERS` and `ROCKETCHAT_ALLOW_BUILTIN_PRESET=personal`, with one Hermes instance and one bot account per person. The settings, several assistants on one server and a checklist are in [Personal assistant](personal-assistant.md).
 
 ## Rocket.Chat side
 

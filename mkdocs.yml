@@ -83,6 +83,7 @@ nav:
   - Guide:
       - Sessions and context: sessions-and-context.md
       - Commands and approvals: commands.md
+      - Personal assistant: personal-assistant.md
       - Attachments: attachments.md
   - Operate:
       - Configuration: configuration.md
