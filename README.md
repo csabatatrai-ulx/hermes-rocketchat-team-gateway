@@ -6,7 +6,7 @@
 
 **Bringing Hermes Agent into the enterprise team chat.** Rocket.Chat is the open source, self-hosted chat that organizations choose when their conversations must stay on their own servers. This adapter makes Hermes a safe colleague there: one bot for a whole team, default-deny commands, and approval buttons so a person decides on dangerous actions.
 
-A Rocket.Chat platform adapter for [Hermes Agent](https://hermes-agent.nousresearch.com/), built for rooms where many people share one bot. It does one job: carry conversations between Rocket.Chat and Hermes reliably. It registers no agent tools and holds no business logic, the same scope as Hermes's own Mattermost, Slack and Telegram adapters; tools come from MCP servers, [by design](#tools-come-from-mcp-servers-by-design).
+A Rocket.Chat platform adapter for [Hermes Agent](https://hermes-agent.nousresearch.com/), built for rooms where many people share one bot. It does one job: carry conversations between Rocket.Chat and Hermes reliably. It registers no agent tools of its own and holds no business logic, the same scope as Hermes's own Mattermost, Slack and Telegram adapters. In Rocket.Chat the agent still has [every tool Hermes has](#tools-everything-hermes-has-none-of-its-own): terminal, files, web, code, and any MCP server.
 
 Supports **Rocket.Chat 8.7 – 9.x** from one code path. Requires **Hermes 0.22.3 or newer**.
 
@@ -153,19 +153,19 @@ flowchart LR
 
 The plugin only carries messages. Sessions, the agent and approvals stay in Hermes, and room access for the agent belongs in an MCP server. See [architecture](docs/architecture.md).
 
-### Tools come from MCP servers, by design
+### Tools: everything Hermes has, none of its own
 
-The plugin registers no agent tools, on purpose:
+No tools of its own does not mean a bot without tools. In Rocket.Chat the agent uses every tool Hermes gives it: the terminal, files, web search, code execution and the tools of any MCP server you connect, with Hermes's approvals in front of the dangerous ones. You choose which, per platform, with `platform_toolsets.rocketchat`. The plugin only carries the conversation, on purpose:
 
-- **The same scope as Hermes's own adapters.** Slack, Mattermost and Telegram register none either, and Hermes's platform guide asks platform plugins not to give the agent its own way to send messages.
+- **The same scope as Hermes's own adapters.** Slack, Mattermost and Telegram register no tools either, and Hermes's platform guide asks platform plugins not to give the agent its own way to send messages.
 - **A small surface.** A transport has one job; a bug in it cannot turn into a tool that reads or posts where it should not.
-- **Capabilities where they belong.** In an MCP server, room search or history work from every channel, not only Rocket.Chat, and are permissioned and audited on their own.
+- **Capabilities where they belong.** A tool lives in Hermes or in an MCP server, where it works from every channel, not only Rocket.Chat, and is permissioned and audited on its own.
 
-So the agent can still search a room, read its history or post elsewhere: connect an MCP server. Rocket.Chat 8.8 and later ships a native one (Enterprise plans with the AI add-on; alpha), and community servers exist:
+Rocket.Chat itself works the same way: to let the agent search a room, read its history or post elsewhere, connect an MCP server. Rocket.Chat 8.8 and later ships a native one (Enterprise plans with the AI add-on; alpha), and community servers exist:
 
 ```bash
 hermes mcp add rocketchat --url https://chat.example.com/api/v1/mcp   # authentication: see Rocket.Chat's MCP documentation
-hermes config set platform_toolsets.rocketchat '[rocketchat]'
+hermes config set platform_toolsets.rocketchat '[terminal, rocketchat]'   # the tools this bot may use
 ```
 
 With the optional signed asker token, such a server knows who is really asking. See [security](docs/security.md#asker-token).
