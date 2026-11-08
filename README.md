@@ -16,6 +16,12 @@ Supports **Rocket.Chat 8.7 – 9.x** from one code path. Requires **Hermes 0.22.
 
 https://github.com/user-attachments/assets/3a8107bc-dd71-4a02-9eed-7d476e32b55a
 
+### ChatOps: a fix that waits for a human
+
+https://github.com/user-attachments/assets/3b9e3c53-9597-4b6e-ab4e-dd813bb0a465
+
+A simulated outage in a sandbox: the service, its logs and the alert are staged; what Hermes does, the commands it runs and the approvals are not.
+
 ## Try it in a few minutes
 
 No Rocket.Chat server? One Compose file starts Rocket.Chat, Hermes Agent and this plugin locally, with a bot, two people and a room ready:
@@ -108,7 +114,7 @@ Every number below comes from a run, not from a claim. The live runs used Rocket
 - **Each check asserts an outcome you could see yourself**: the answer arrives in the right room or thread and mentions its asker; a dangerous command's file is still on disk after another person's click and gone only after the asker's; a refused command produces no request at the model endpoint (a recording stub model counts them).
 - **Restarts and outages** are real: the gateway container is stopped, or its connection to Rocket.Chat is cut, while people keep writing, then started again.
 - **Real-model runs** use Nous Portal, and again a self-hosted model served by vLLM on an on-premises GPU. The personal assistant run uses a second Hermes instance with its own bot account.
-- **The demo video** is recorded from such a run; nothing in it is mocked.
+- **The demo video** is recorded from such a run; nothing in it is mocked. The ChatOps clip is a real run too, against a simulated service in a sandbox.
 
 The live-run scripts depend on a local test server and are not in this repository; [`try/`](try/README.md) sets up the same kind of environment for you to repeat any of it by hand.
 

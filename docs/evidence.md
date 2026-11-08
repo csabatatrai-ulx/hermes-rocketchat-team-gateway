@@ -24,7 +24,7 @@ Every number below comes from a run, not from a claim. The live runs used Rocket
 - **Each check asserts an outcome you could see yourself**: the answer arrives in the right room or thread and mentions its asker; a dangerous command's file is still on disk after another person's click and gone only after the asker's; a refused command produces no request at the model endpoint (a recording stub model counts them).
 - **Restarts and outages** are real: the gateway container is stopped, or its connection to Rocket.Chat is cut, while people keep writing, then started again.
 - **Real-model runs** use Nous Portal, and again a self-hosted model served by vLLM on an on-premises GPU. The personal assistant run uses a second Hermes instance with its own bot account.
-- **The demo video** is recorded from such a run; nothing in it is mocked.
+- **The demo video** is recorded from such a run; nothing in it is mocked. The ChatOps clip is a real run too, against a simulated service in a sandbox.
 
 The live-run scripts depend on a local test server and are not in this repository; [Try it locally](try.md) sets up the same kind of environment for you to repeat any of it by hand.
 

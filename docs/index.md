@@ -46,6 +46,16 @@ hide:
 </div>
 <p class="caption">An 89-second real run: a real Rocket.Chat, the real gateway and a real model. Nothing is staged.</p>
 
+### ChatOps: a fix that waits for a human
+
+<div class="video-frame">
+  <video controls preload="metadata" playsinline poster="images/ops-poster.jpg">
+    <source src="https://github.com/user-attachments/assets/3b9e3c53-9597-4b6e-ab4e-dd813bb0a465" type="video/mp4">
+    <a href="https://github.com/csabatatrai-ulx/hermes-rocketchat-team-gateway#readme">Watch the ChatOps clip on GitHub</a>
+  </video>
+</div>
+<p class="caption">A simulated outage in a sandbox: the service, its logs and the alert are staged; what Hermes does, the commands it runs and the approvals are not.</p>
+
 ## Why teams use it
 
 <div class="grid cards two" markdown>
