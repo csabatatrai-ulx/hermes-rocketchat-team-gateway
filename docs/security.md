@@ -44,4 +44,4 @@ The model passes the token verbatim as a tool argument. A verifying MCP server s
 
 ## Reporting a vulnerability
 
-See [SECURITY.md](../SECURITY.md).
+See [SECURITY.md](https://github.com/csabatatrai-ulx/hermes-rocketchat-team-gateway/blob/main/SECURITY.md).

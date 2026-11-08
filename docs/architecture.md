@@ -6,17 +6,71 @@ This plugin is the wire between Hermes and Rocket.Chat, and nothing else. Regist
 
 ## Message flow
 
-```text
-                ┌─ DDP WebSocket (default) ─┐
-Rocket.Chat ────┤                           ├─► classify_inbound ─► command guard / dedup
-                └─ Outgoing Webhook ────────┘           │
-                                                        ▼
-                                  room context + attachments ─► MessageEvent ─► Hermes core
-                                                                                    │
-Rocket.Chat ◄── REST (send, edit, upload, react) ◄── duplicate guard ◄── adapter.send ◄┘
+Two inbound paths, one decision function, one outbound path. Both inbound paths build the same payload shape and end in the same pure `classify_inbound`, so their behaviour cannot drift apart.
+
+<figure class="diagram narrow" markdown>
+![Rocket.Chat reaches classify_inbound over the DDP WebSocket or an outgoing webhook; the turn goes to Hermes core as a MessageEvent; the reply goes through send and back to Rocket.Chat over REST.](images/flow-architecture.svg)
+</figure>
+
+Cron delivery without a running gateway takes a separate, REST-only path: `standalone_send`, which Hermes calls from its own process.
+
+### A question and its answer
+
+What happens between a mention and the answer, on the default DDP path.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor A as Alice
+    participant RC as Rocket.Chat
+    participant P as Plugin
+    participant H as Hermes core
+    A->>RC: @hermes when is the release?
+    RC-->>P: DDP stream-room-messages
+    P->>P: classify_inbound: mention, allowlist, dedup, command guard
+    P->>RC: react with eyes (acknowledged)
+    P->>RC: REST history since Alice's previous mention
+    P->>H: MessageEvent: text, room context, files, session key
+    Note over H: session, model, tools, approvals
+    H->>P: send(reply, reply_to)
+    P->>P: record in the outbound duplicate guard
+    P->>RC: REST postMessage: quote of the question, @alice
+    P->>RC: remove the eyes reaction
+    RC-->>A: the answer, in the thread if asked in one
 ```
 
-Both inbound paths build the same payload shape and end in the same pure decision function, so their behaviour cannot drift apart.
+### A dangerous command and its buttons
+
+With `approvals.mode: manual`. Each person has their own session in a room, so a click only reaches the session of the person who clicked.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor A as Alice
+    actor B as Bob
+    participant RC as Rocket.Chat
+    participant P as Plugin
+    participant H as Hermes core
+    A->>RC: @hermes delete the old build
+    RC-->>P: mention
+    P->>H: MessageEvent (Alice's session)
+    H->>P: _send_exec_approval_prompt
+    P->>RC: card with Allow Once / Deny buttons
+    B->>RC: clicks Allow Once
+    RC-->>P: "@hermes /approve" from Bob
+    P->>H: /approve in Bob's session
+    H->>P: No pending command to approve
+    P->>RC: reply to Bob, nothing runs
+    A->>RC: clicks Allow Once
+    RC-->>P: "@hermes /approve" from Alice
+    P->>H: /approve in Alice's session
+    Note over H: the command runs
+    P->>RC: replace the card: "Answered by @alice"
+    H->>P: result
+    P->>RC: answer to Alice
+```
+
+The buttons send exactly what a person could type, so the allowlist, the command guard, Hermes's admin lists and the session key apply to a click unchanged. There is no separate authorization path to get wrong.
 
 ## Modules
 

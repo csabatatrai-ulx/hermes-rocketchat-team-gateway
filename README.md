@@ -115,8 +115,7 @@ flowchart LR
 
 The plugin only carries messages. Sessions, the agent and approvals stay in Hermes, and room access for the agent belongs in an MCP server. See [architecture](docs/architecture.md).
 
-<details>
-<summary><b>A question and its answer</b>, step by step</summary>
+### A question and its answer
 
 ```mermaid
 sequenceDiagram
@@ -139,10 +138,9 @@ sequenceDiagram
     RC-->>A: the answer, in the thread if asked in one
 ```
 
-</details>
+### A dangerous command and its buttons
 
-<details>
-<summary><b>A dangerous command and its buttons</b>: why another person's click runs nothing</summary>
+Each person has their own session in a room, so a click only reaches the session of the person who clicked.
 
 ```mermaid
 sequenceDiagram
@@ -170,8 +168,6 @@ sequenceDiagram
     H->>P: result
     P->>RC: answer to Alice
 ```
-
-</details>
 
 ## Quick start
 
