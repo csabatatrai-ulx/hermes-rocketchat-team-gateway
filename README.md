@@ -43,6 +43,15 @@ https://github.com/user-attachments/assets/cf84c1a0-8b3f-48f2-9202-e0f3e05dfc47
 - A provider failure becomes a short notice naming the model provider, not a raw stack of retries.
 - Removed Rocket.Chat APIs are detected at runtime and deprecation headers are logged, so a server upgrade shows up in the log before it breaks.
 
+## Talking to the bot
+
+| | In a room or thread | In a one-to-one DM |
+|---|---|---|
+| A question | `@hermes when is the release?` | `when is the release?` |
+| A Hermes command | `@hermes /new` or `@hermes !new` | `!new` or `@hermes /new` |
+
+Rocket.Chat clients treat a message that starts with `/` as one of their own commands and never send an unknown one, so a bare `/new` does not reach the bot. Mention it first, or use `!new` as on Hermes's Slack and Matrix adapters. Hermes's own prompts already show the form that works, such as `@hermes /approve`. Only allowed commands run; see [commands](docs/commands.md).
+
 ## How it works
 
 ```mermaid
