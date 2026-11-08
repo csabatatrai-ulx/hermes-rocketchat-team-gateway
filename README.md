@@ -14,6 +14,19 @@ Supports **Rocket.Chat 8.7 – 9.x** from one code path. Requires **Hermes 0.22.
 
 https://github.com/user-attachments/assets/7e9ceff4-9de5-46ef-9043-bea65a302d05
 
+## Try it in a few minutes
+
+No Rocket.Chat server? One Compose file starts Rocket.Chat, Hermes Agent and this plugin locally, with a bot, two people and a room ready:
+
+```bash
+git clone https://github.com/csabatatrai-ulx/hermes-rocketchat-team-gateway && cd hermes-rocketchat-team-gateway
+docker compose -f try/compose.yaml up -d
+docker compose -f try/compose.yaml exec -u hermes hermes hermes portal   # sign in to Nous Portal (free tier works)
+docker compose -f try/compose.yaml restart hermes
+```
+
+Open **http://localhost:3000**, sign in as `alice` / `hermes-demo`, and say `@hermes hi` in **#hermes-demo**. What to try next, and how to use another model: [try/README.md](try/README.md).
+
 ![A dangerous command waits for a click. Another person's click runs nothing; the click of the person who asked runs it.](docs/images/approval-buttons.gif)
 
 ## Why this adapter

@@ -1,0 +1,80 @@
+# Try the plugin: a local Rocket.Chat, Hermes Agent and this plugin, wired together. See try/README.md.
+#
+#   docker compose -f try/compose.yaml up -d
+#   docker compose -f try/compose.yaml exec -u hermes hermes hermes portal    # sign in to Nous Portal (free tier)
+#   docker compose -f try/compose.yaml restart hermes
+#
+# Then open http://localhost:3000, sign in as alice / hermes-demo and say "@hermes hi" in #hermes-demo.
+# Everything listens on 127.0.0.1 only. With LLM_API_KEY (and LLM_BASE_URL, LLM_MODEL) set, any
+# OpenAI-compatible endpoint is used instead of Nous Portal.
+name: hermes-rocketchat-try
+
+x-hermes-image: &hermes_image docker.io/nousresearch/hermes-agent:${HERMES_TAG:-v0.23.0}
+
+services:
+  mongodb:
+    image: docker.io/library/mongo:8.0.4
+    command: mongod --replSet rs0 --oplogSize 128 --quiet
+    volumes: [mongodb_data:/data/db]
+
+  mongodb-init:
+    image: docker.io/library/mongo:8.0.4
+    restart: "no"
+    depends_on: [mongodb]
+    entrypoint:
+      - bash
+      - -c
+      - |
+        for i in $$(seq 1 30); do mongosh --host mongodb --quiet --eval 'db.adminCommand({ping:1})' && break; sleep 2; done
+        mongosh --host mongodb --quiet --eval 'try { rs.status() } catch (e) { rs.initiate({_id:"rs0",members:[{_id:0,host:"mongodb:27017"}]}) }'
+
+  nats:
+    image: docker.io/library/nats:2.11-alpine
+
+  rocketchat:
+    image: registry.rocket.chat/rocketchat/rocket.chat:${ROCKETCHAT_TAG:-8.9.1}
+    depends_on:
+      mongodb-init: {condition: service_completed_successfully}
+      nats: {condition: service_started}
+    environment:
+      MONGO_URL: mongodb://mongodb:27017/rocketchat?replicaSet=rs0
+      MONGO_OPLOG_URL: mongodb://mongodb:27017/local?replicaSet=rs0
+      ROOT_URL: http://localhost:${TRY_PORT:-3000}
+      PORT: 3000
+      DEPLOY_METHOD: docker
+      TRANSPORTER: monolith+nats://nats:4222
+      OVERWRITE_SETTING_Show_Setup_Wizard: completed
+      OVERWRITE_SETTING_Accounts_TwoFactorAuthentication_Enabled: "false"
+      OVERWRITE_SETTING_Accounts_TwoFactorAuthentication_By_Email_Enabled: "false"
+      ADMIN_USERNAME: admin
+      ADMIN_PASS: hermes-demo
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_NAME: Admin
+    ports: ["127.0.0.1:${TRY_PORT:-3000}:3000"]
+
+  # Creates the bot, two people and a room, and writes Hermes's settings. Runs once and exits.
+  provision:
+    image: docker.io/library/python:3.12-alpine
+    restart: "no"
+    depends_on: [rocketchat]
+    environment:
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-}
+    volumes:
+      - ./provision.py:/provision.py:ro
+      - hermes_data:/hermes
+    command: ["python3", "-u", "/provision.py"]
+
+  hermes:
+    image: *hermes_image
+    depends_on:
+      provision: {condition: service_completed_successfully}
+    volumes:
+      - hermes_data:/opt/data
+      - ..:/opt/data/plugins/rocketchat-team-gateway:ro
+    command: ["gateway", "run"]
+
+volumes:
+  mongodb_data:
+  hermes_data:
