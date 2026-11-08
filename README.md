@@ -52,6 +52,25 @@ https://github.com/user-attachments/assets/cf84c1a0-8b3f-48f2-9202-e0f3e05dfc47
 
 Rocket.Chat clients treat a message that starts with `/` as one of their own commands and never send an unknown one, so a bare `/new` does not reach the bot. Mention it first, or use `!new` as on Hermes's Slack and Matrix adapters. Hermes's own prompts already show the form that works, such as `@hermes /approve`. Only allowed commands run; see [commands](docs/commands.md).
 
+## Evidence
+
+Every number below comes from a run, not from a claim. The live runs used Rocket.Chat 8.9.1, the official Hermes 0.23.0 image and Chrome driving the web client.
+
+| What was checked | Result |
+|---|---|
+| Unit and contract tests in CI, on Hermes 0.22.3 (oldest supported) and 0.23.0 | 769 pass on both |
+| `hermes plugins validate --install-deps` | Passes, no private core imports |
+| End-to-end scenarios: mentions, threads, DMs, files both ways, concurrent askers, the command guard | 39 / 39 |
+| Approval buttons clicked in a room and a thread, including another person's click doing nothing | 16 / 16 |
+| `/new` confirmation buttons | 10 / 10 |
+| Approval button in a one-to-one DM | 4 / 4 |
+| Gateway restart and network outage, with catch-up | 14 / 14 |
+| Cron delivery through the running gateway, and with the gateway stopped | 2 / 2 |
+| Refused commands such as `/yolo`, `/tools`, `/cron` and unknown `/words` | 0 model calls |
+| Real model (Nous Portal): room context, identity, threads, long answers, approval | Pass |
+
+The scripts for the live runs drive a local Rocket.Chat and are not part of this repository yet.
+
 ## How it works
 
 ```mermaid
