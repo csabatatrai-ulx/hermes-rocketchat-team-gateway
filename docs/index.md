@@ -123,6 +123,14 @@ Rocket.Chat clients never send an unknown `/command`, so mention the bot first o
 
     [:octicons-arrow-right-24: Install on your server](getting-started.md)
 
+-   **Or as a personal assistant**
+
+    ---
+
+    One owner, DMs only, with sessions, model switching and scheduling open. Each person needs their own Hermes instance and bot account.
+
+    [:octicons-arrow-right-24: Set up a personal assistant](deployment.md#a-personal-assistant)
+
 </div>
 
 ---

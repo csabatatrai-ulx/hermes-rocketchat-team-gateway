@@ -56,6 +56,21 @@ Open **http://localhost:3000**, sign in as `alice` / `hermes-demo`, and say `@he
 - A provider failure becomes a short notice naming the model provider, not a raw stack of retries.
 - Removed Rocket.Chat APIs are detected at runtime and deprecation headers are logged, so a server upgrade shows up in the log before it breaks.
 
+**It also works as a personal assistant.**
+
+The same plugin can serve one person in their DMs, by configuration only: answer only the owner, only in DMs, and open the session, model and scheduling commands that a shared bot must not expose. The most dangerous commands (`/yolo`, `/restart`, `/update` and a few more) stay closed even then, unless enabled one by one.
+
+> [!IMPORTANT]
+> **A personal assistant needs its own Hermes instance and bot account per person.** One Hermes has one owner's sessions, memory, model and cron jobs. Never use the `personal` preset on a bot that several people can talk to.
+
+```dotenv
+ROCKETCHAT_DM_ONLY=true
+ROCKETCHAT_ALLOWED_USERS=<owner user id>
+ROCKETCHAT_ALLOW_BUILTIN_PRESET=personal
+```
+
+See [a personal assistant](docs/deployment.md#a-personal-assistant).
+
 ## Talking to the bot
 
 | | In a room or thread | In a one-to-one DM |

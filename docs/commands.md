@@ -32,7 +32,9 @@ ROCKETCHAT_ALLOW_BUILTIN_RESET=false
 
 Use the name with hyphens as underscores (`ROCKETCHAT_ALLOW_BUILTIN_RELOAD_MCP`). Common aliases follow their command (`/hb` follows `HEARTBEAT`). An alias the plugin does not list stays refused until it gets its own key, and a mistyped key leaves the command refused.
 
-**Presets:** `ROCKETCHAT_ALLOW_BUILTIN_PRESET=personal` adds session management, `/model`, `/bg`, `/sethome`, `/goal` and similar commands for a bot that answers one owner. It does not belong on a shared bot, where anyone could switch the model or browse sessions. `/yolo`, `/restart`, `/update`, `/approvals`, `/pause`, `/learn`, `/debug` and `/platform` are in no preset.
+**Presets:** `ROCKETCHAT_ALLOW_BUILTIN_PRESET=personal` adds session management, `/model`, `/bg`, `/sethome`, `/goal` and similar commands for a bot that answers one owner. It does not belong on a shared bot, where anyone could switch the model or browse sessions: each person who wants a personal assistant needs their own Hermes instance and bot account (see [a personal assistant](deployment.md#a-personal-assistant)). `/yolo`, `/restart`, `/update`, `/approvals`, `/pause`, `/learn`, `/debug` and `/platform` are in no preset.
+
+The `personal` preset adds: `/sessions`, `/resume`, `/title`, `/branch`, `/retry`, `/undo`, `/compress`, `/discard`, `/status`, `/usage`, `/queue`, `/bg`, `/help`, `/commands`, `/version`, `/profile`, `/model`, `/reasoning`, `/personality`, `/footer`, `/insights`, `/always`, `/sethome`, `/heartbeat`, `/loop`, `/steer`, `/agents`, `/goal`, `/subgoal`, `/plan`, `/review` and `/refine`.
 
 ## Approving a dangerous command
 
