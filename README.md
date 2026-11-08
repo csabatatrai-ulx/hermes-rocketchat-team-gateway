@@ -45,7 +45,7 @@ Open **http://localhost:3000**, sign in as `alice` / `hermes-demo`, and say `@he
 **It guards a room with many users.**
 
 - Every `/word` is refused over chat unless allowed, without asking Hermes what is a command. A new command in a future Hermes is refused from day one, and no Hermes change can open the guard. Otherwise anyone in a room could run `/model`, `/yolo` or `/restart`.
-- With `approvals.mode: manual`, a dangerous command waits for a click: accept and deny buttons appear on the prompt, and each click runs as the authenticated person who made it. Confirming `/new` works the same way. Which commands count as dangerous is Hermes's call, and its list has gaps; see [what approvals cover](docs/security.md#what-it-does-not-do).
+- With `approvals.mode: manual`, a dangerous command waits for a click: accept and deny buttons appear on the prompt, and each click runs as the authenticated person who made it. Confirming `/new` works the same way. Which commands count as dangerous is Hermes's call, and its list has gaps (a relative-path `rm` is not flagged, [#151542](https://github.com/NousResearch/hermes-agent/issues/151542)); see [what approvals cover](docs/security.md#what-it-does-not-do).
 - Skill commands have their own allowlist, and persistent approvals that would write to the shared config are refused.
 - A bot answers only in rooms it is a member of, so nobody can pull it into a channel with a mention.
 - Lines from senders outside the allowlist are marked `[unverified sender]` in the room context, and a multi-line message cannot forge a context marker.
@@ -112,7 +112,7 @@ Every number below comes from a run, not from a claim. The live runs used Rocket
 
 The live-run scripts depend on a local test server and are not in this repository; [`try/`](try/README.md) sets up the same kind of environment for you to repeat any of it by hand.
 
-Building it also turned up two Hermes gateway bugs, which the author reported upstream: [#148433](https://github.com/NousResearch/hermes-agent/issues/148433) (a shutdown during a redirected turn overwrites an already streamed reply) and [#149169](https://github.com/NousResearch/hermes-agent/issues/149169) (`/loop` and `/heartbeat` stay silent after a gateway restart until the chat gets a plain message). A third one, found because this adapter gives every turn room context, has a fix proposed in [#149038](https://github.com/NousResearch/hermes-agent/pull/149038): session previews in `/resume` and `/sessions` showed an adapter's context line instead of the person's message ([#148988](https://github.com/NousResearch/hermes-agent/issues/148988)).
+Building it also turned up Hermes bugs, which the author reported upstream: [#148433](https://github.com/NousResearch/hermes-agent/issues/148433) (a shutdown during a redirected turn overwrites an already streamed reply) and [#149169](https://github.com/NousResearch/hermes-agent/issues/149169) (`/loop` and `/heartbeat` stay silent after a gateway restart until the chat gets a plain message). [#151542](https://github.com/NousResearch/hermes-agent/issues/151542): a relative-path `rm` never asks for approval, while the same deletion with an absolute path does. A third one, found because this adapter gives every turn room context, has a fix proposed in [#149038](https://github.com/NousResearch/hermes-agent/pull/149038): session previews in `/resume` and `/sessions` showed an adapter's context line instead of the person's message ([#148988](https://github.com/NousResearch/hermes-agent/issues/148988)).
 
 ## How it works
 
