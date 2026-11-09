@@ -26,7 +26,7 @@ Every number below comes from a run, not from a claim. The live runs used Rocket
 - **Real-model runs** use Nous Portal, and again a self-hosted model served by vLLM on an on-premises GPU. The personal assistant run uses a second Hermes instance with its own bot account.
 - **The demo video** is recorded from such a run; nothing in it is mocked. The ChatOps clip is a real run too, against a simulated service in a sandbox.
 
-The live-run scripts depend on a local test server and are not in this repository; [Try it locally](try.md) sets up the same kind of environment for you to repeat any of it by hand.
+You can repeat the core of it yourself: `python3 try/check.py` runs seven of these checks against the [try-it stack](try.md) with its scripted demo model, no account or key needed. The full live-run scripts depend on a local test server and are not in this repository.
 
 Building it also turned up Hermes bugs, which the author reported upstream:
 

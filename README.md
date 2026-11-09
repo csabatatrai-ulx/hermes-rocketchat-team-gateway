@@ -27,16 +27,15 @@ A simulated outage in a sandbox: the service, its logs and the alert are staged;
 
 ## Try it in a few minutes
 
-No Rocket.Chat server? One Compose file starts Rocket.Chat, Hermes Agent and this plugin locally, with a bot, two people and a room ready:
+No Rocket.Chat server, no account, no API key? One Compose file starts Rocket.Chat, Hermes Agent and this plugin locally, with a bot, two people and a room ready, and a scripted demo model so nothing needs signing up:
 
 ```bash
 git clone https://github.com/csabatatrai-ulx/hermes-rocketchat-team-gateway && cd hermes-rocketchat-team-gateway
 docker compose -f try/compose.yaml up -d
-docker compose -f try/compose.yaml exec -u hermes hermes hermes portal   # sign in to Nous Portal (free tier works)
-docker compose -f try/compose.yaml restart hermes
+python3 try/check.py    # 7 end-to-end checks: answers, two askers, the command guard, approval buttons, DMs
 ```
 
-Open **http://localhost:3000**, sign in as `alice` / `hermes-demo`, and say `@hermes hi` in **#hermes-demo**. What to try next, and how to use another model: [try/README.md](try/README.md).
+Open **http://localhost:3000**, sign in as `alice` / `hermes-demo`, and say `@hermes hi` in **#hermes-demo**. The demo model is not AI: it answers with fixed text, so what you see is the plugin itself. For a real model, sign in to Nous Portal (free tier) or use any OpenAI-compatible endpoint: [try/README.md](try/README.md).
 
 ![A dangerous command waits for a click. Another person's click runs nothing; the click of the person who asked runs it.](docs/images/approval-buttons.gif)
 
@@ -119,7 +118,7 @@ Every number below comes from a run, not from a claim. The live runs used Rocket
 - **Real-model runs** use Nous Portal, and again a self-hosted model served by vLLM on an on-premises GPU. The personal assistant run uses a second Hermes instance with its own bot account.
 - **The demo video** is recorded from such a run; nothing in it is mocked. The ChatOps clip is a real run too, against a simulated service in a sandbox.
 
-The live-run scripts depend on a local test server and are not in this repository; [`try/`](try/README.md) sets up the same kind of environment for you to repeat any of it by hand.
+You can repeat the core of it yourself: `python3 try/check.py` runs seven of these checks against the [try-it stack](try/README.md) with its scripted demo model, no account or key needed. The full live-run scripts depend on a local test server and are not in this repository.
 
 Building it also turned up Hermes bugs, which the author reported upstream:
 

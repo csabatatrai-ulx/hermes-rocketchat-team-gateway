@@ -13,4 +13,5 @@ First public release.
 - Duplicate suppression that survives a restart, catch-up after a reconnect, and a notice or replay after a restart
 - `hermes gateway setup` wizard and out-of-process cron delivery
 - Inbound and outbound files
+- A try-it stack (`try/`): Rocket.Chat, Hermes and the plugin in one Compose file, with a scripted demo model so no account or key is needed, and `try/check.py`, seven end-to-end checks
 - Supports Rocket.Chat 8.7 - 9.x and Hermes 0.22.3 or newer

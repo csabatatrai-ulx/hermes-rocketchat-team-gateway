@@ -1,12 +1,14 @@
 # Try the plugin: a local Rocket.Chat, Hermes Agent and this plugin, wired together. See try/README.md.
 #
 #   docker compose -f try/compose.yaml up -d
-#   docker compose -f try/compose.yaml exec -u hermes hermes hermes portal    # sign in to Nous Portal (free tier)
-#   docker compose -f try/compose.yaml restart hermes
 #
 # Then open http://localhost:3000, sign in as alice / hermes-demo and say "@hermes hi" in #hermes-demo.
-# Everything listens on 127.0.0.1 only. With LLM_API_KEY (and LLM_BASE_URL, LLM_MODEL) set, any
-# OpenAI-compatible endpoint is used instead of Nous Portal.
+# It starts with a scripted demo model (no account, no key, not AI); `python3 try/check.py` checks the
+# whole path. For a real model, sign in to Nous Portal (free tier) and restart hermes:
+#   docker compose -f try/compose.yaml exec -u hermes hermes hermes portal
+#   docker compose -f try/compose.yaml restart hermes
+# or start with LLM_API_KEY (and LLM_BASE_URL, LLM_MODEL) for any OpenAI-compatible endpoint.
+# Everything listens on 127.0.0.1 only.
 name: hermes-rocketchat-try
 
 x-hermes-image: &hermes_image docker.io/nousresearch/hermes-agent:${HERMES_TAG:-v0.23.0}
@@ -51,6 +53,14 @@ services:
       ADMIN_EMAIL: admin@example.com
       ADMIN_NAME: Admin
     ports: ["127.0.0.1:${TRY_PORT:-3000}:3000"]
+
+  # The scripted demo model (try/demo_model.py): no key, not AI, shows the plugin's behaviour. Its port on the
+  # host is only for try/check.py, which asks it whether a refused command reached it.
+  demo-model:
+    image: docker.io/library/python:3.12-alpine
+    volumes: [./demo_model.py:/demo_model.py:ro]
+    command: ["python3", "-u", "/demo_model.py"]
+    ports: ["127.0.0.1:${TRY_DEMO_PORT:-3001}:8080"]
 
   # Creates the bot, two people and a room, and writes Hermes's settings. Runs once and exits.
   provision:

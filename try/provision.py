@@ -99,10 +99,14 @@ if os.environ.get("LLM_API_KEY"):
   api_key: {os.environ['LLM_API_KEY']}
 """
 else:
-    # `hermes portal` signs in to Nous Portal and picks the model; it rewrites this section.
+    # The scripted demo model, so the stack works without any account. `hermes portal` signs in to Nous Portal,
+    # picks a real model and rewrites this section.
     model = """model:
-  provider: nous
-  base_url: https://inference-api.nousresearch.com/v1
+  provider: custom
+  default: demo
+  base_url: http://demo-model:8080/v1
+  api_key: demo
+  context_length: 128000
 """
 config = HOME / "config.yaml"
 if not config.exists():  # keep a model chosen with `hermes portal` across restarts
@@ -116,6 +120,9 @@ approvals:
 memory:
   memory_enabled: false
   user_profile_enabled: false
+auxiliary:
+  title_generation:
+    enabled: false
 """)
 for f in (HOME / ".env", HOME / "config.yaml"):
     os.chown(f, 10000, 10000)
@@ -124,5 +131,6 @@ os.chown(HOME, 10000, 10000)
 print("Ready. Open the Rocket.Chat address, sign in as alice or bob (password: hermes-demo), "
       f"and say '@hermes hi' in #{ROOM}.")
 if not os.environ.get("LLM_API_KEY"):
-    print("No LLM_API_KEY: sign in to Nous Portal once with "
-          "`docker compose -f try/compose.yaml exec -u hermes hermes hermes portal`, then restart the hermes service.")
+    print("Model: the scripted demo model (not AI). `python3 try/check.py` checks the whole path. For a real model, "
+          "sign in to Nous Portal with `docker compose -f try/compose.yaml exec -u hermes hermes hermes portal`, "
+          "then restart the hermes service.")

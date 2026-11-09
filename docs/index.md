@@ -126,7 +126,7 @@ Rocket.Chat clients never send an unknown `/command`, so mention the bot first o
 
     ---
 
-    One Compose file starts Rocket.Chat, Hermes Agent and this plugin, with a bot, two people and a room ready.
+    One Compose file starts Rocket.Chat, Hermes Agent and this plugin, with a bot, two people and a room ready. No account or API key needed.
 
     [:octicons-arrow-right-24: Try it locally](try.md)
 
