@@ -31,11 +31,15 @@ def call(path, body=None, auth=None):
     if auth:
         req.add_header("X-Auth-Token", auth["token"])
         req.add_header("X-User-Id", auth["id"])
-    try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            return json.loads(resp.read() or b"{}")
-    except urllib.error.HTTPError as exc:
-        return {"_status": exc.code}
+    for _ in range(20):
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                return json.loads(resp.read() or b"{}")
+        except urllib.error.HTTPError as exc:
+            if exc.code != 429:  # Rocket.Chat's API rate limiter: wait and ask again
+                return {"_status": exc.code}
+            time.sleep(3)
+    return {"_status": 429}
 
 
 def login(user):
@@ -61,7 +65,7 @@ def wait(trigger, rid, who, until, timeout=90, kind="channels"):
         found = bot_replies(trigger, rid, who, kind)
         if until(found):
             return found
-        time.sleep(1)
+        time.sleep(2)
     return bot_replies(trigger, rid, who, kind)
 
 
