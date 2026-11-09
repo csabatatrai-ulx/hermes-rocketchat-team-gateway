@@ -7,15 +7,13 @@
 [![Hermes Agent 0.22.3+](https://img.shields.io/badge/Hermes%20Agent-0.22.3%2B-6d28d9)](https://hermes-agent.nousresearch.com/)
 [![Dependencies: aiohttp only, also used by Hermes's own messaging adapters](https://img.shields.io/badge/dependencies-aiohttp%20only-2e7d32)](requirements.txt)
 
-**Bringing Hermes Agent into the enterprise team chat.** Rocket.Chat is the open source, self-hosted chat that organizations choose when their conversations must stay on their own servers. This adapter makes Hermes a safe colleague there: one bot for a whole team, default-deny commands, and approval buttons so a person decides on dangerous actions.
-
-A Rocket.Chat platform adapter for [Hermes Agent](https://hermes-agent.nousresearch.com/), built for rooms where many people share one bot. It does one job: carry conversations between Rocket.Chat and Hermes reliably. It registers no agent tools of its own and holds no business logic, the same scope as Hermes's own Mattermost, Slack and Telegram adapters. In Rocket.Chat the agent still has [every tool Hermes has](#tools-everything-hermes-has-none-of-its-own): terminal, files, web, code, and any MCP server.
+**Bringing Hermes Agent into the enterprise team chat.** Rocket.Chat is the open source, self-hosted chat that organizations choose when their conversations must stay on their own servers. This [Hermes Agent](https://hermes-agent.nousresearch.com/) platform adapter makes Hermes a safe colleague there: one bot for a whole team, default-deny commands, and approval buttons so a person decides on dangerous actions. It only carries conversations, like Hermes's own Slack and Mattermost adapters; the agent keeps [every tool Hermes has](#tools-everything-hermes-has-none-of-its-own).
 
 Supports **Rocket.Chat 8.7 – 9.x** from one code path. Requires **Hermes 0.22.3 or newer**.
 
-- **Standalone, as [Hermes asks of third-party integrations](https://github.com/NousResearch/hermes-agent/pull/4637#issuecomment-4950466375).** Rocket.Chat support is a long-standing request ([#3725](https://github.com/NousResearch/hermes-agent/issues/3725), [#94576](https://github.com/NousResearch/hermes-agent/issues/94576)), and the in-tree adapter for it was closed under that policy. This one lives in its own repository and changes nothing in Hermes core, so keeping up with Rocket.Chat and Hermes releases is this project's job, not the Hermes maintainers'. It passes `hermes plugins validate` with no private core imports, and a contract test covers the Hermes interfaces it relies on.
+- **Standalone, as [Hermes asks of third-party integrations](https://github.com/NousResearch/hermes-agent/pull/4637#issuecomment-4950466375).** Rocket.Chat support is a long-standing request ([#3725](https://github.com/NousResearch/hermes-agent/issues/3725), [#94576](https://github.com/NousResearch/hermes-agent/issues/94576)). This plugin changes nothing in Hermes core and keeps up with Rocket.Chat and Hermes releases itself; a contract test covers every Hermes interface it uses.
 - **Built for shared rooms.** Each person gets their own session and room context, Hermes commands are blocked over chat unless allowed, and only the person who asked can approve their dangerous command.
-- **Tested live.** 750+ unit tests in CI against the oldest supported and the newest Hermes release, plus end-to-end runs with the official Hermes 0.23.0 image against Rocket.Chat 8.9.1, including a restart, a network outage and real clicks on the approval buttons.
+- **Tested live.** 770 unit tests in CI against the oldest supported and the newest Hermes release, plus end-to-end runs with the official Hermes 0.23.0 image against Rocket.Chat 8.9.1, including a restart, a network outage and real clicks on the approval buttons.
 
 Demo video (1:29): two people in a shared room, the approval buttons and the personal assistant.
 
@@ -113,16 +111,7 @@ Every number below comes from a run, not from a claim. The live runs used Rocket
 | Personal assistant, a second Hermes with the `personal` preset and a real model: DM questions, memory across sessions, preset commands, `/sethome` and a delivered reminder, `/yolo` refused, other people and rooms ignored | 19 / 19 |
 | Fully local: the same real-model checks against a self-hosted open-weight model on vLLM, no cloud model service (team bot: room context, identity, threads, long answers, approval; personal assistant: all of the above) | 11 / 11 and 19 / 19 |
 
-### How these were measured
-
-- **Unit and contract tests** run in [CI](https://github.com/csabatatrai-ulx/hermes-rocketchat-team-gateway/actions/workflows/ci.yml) on every push. The contract tests import the Hermes release under test and check each member the adapter relies on, so a renamed or removed interface fails the build.
-- **Live runs** use a real Rocket.Chat 8.9.1 in Docker (with MongoDB and NATS), the official Hermes Agent image and this plugin exactly as committed. Test users post through the Rocket.Chat REST API, and every button is clicked by Chrome in the Rocket.Chat web client, signed in as the person who clicks.
-- **Each check asserts an outcome you could see yourself**: the answer arrives in the right room or thread and mentions its asker; a dangerous command's file is still on disk after another person's click and gone only after the asker's; a refused command produces no request at the model endpoint (a recording stub model counts them).
-- **Restarts and outages** are real: the gateway container is stopped, or its connection to Rocket.Chat is cut, while people keep writing, then started again.
-- **Real-model runs** use Nous Portal, and again a self-hosted model served by vLLM on an on-premises GPU. The personal assistant run uses a second Hermes instance with its own bot account.
-- **The demo video** is recorded from such a run; nothing in it is mocked. The ChatOps clip is a real run too, against a simulated service in a sandbox.
-
-You can repeat the core of it yourself: `python3 try/check.py` runs seven of these checks against the [try-it stack](try/README.md) with its scripted demo model, no account or key needed. The full live-run scripts depend on a local test server and are not in this repository.
+How each was measured, and what is not verified yet: [testing and evidence](docs/evidence.md). To repeat the core of it yourself, `python3 try/check.py` runs seven of these checks against the [try-it stack](try/README.md), no account or key needed.
 
 Building it also turned up Hermes bugs, which the author reported upstream:
 
@@ -172,11 +161,7 @@ The plugin only carries messages. Sessions, the agent and approvals stay in Herm
 
 ### Tools: everything Hermes has, none of its own
 
-No tools of its own does not mean a bot without tools. In Rocket.Chat the agent uses every tool Hermes gives it: the terminal, files, web search, code execution and the tools of any MCP server you connect, with Hermes's approvals in front of the dangerous ones. You choose which, per platform, with `platform_toolsets.rocketchat`. The plugin only carries the conversation, on purpose:
-
-- **The same scope as Hermes's own adapters.** Slack, Mattermost and Telegram register no tools either, and Hermes's platform guide asks platform plugins not to give the agent its own way to send messages.
-- **A small surface.** A transport has one job; a bug in it cannot turn into a tool that reads or posts where it should not.
-- **Capabilities where they belong.** A tool lives in Hermes or in an MCP server, where it works from every channel, not only Rocket.Chat, and is permissioned and audited on its own.
+No tools of its own does not mean a bot without tools. In Rocket.Chat the agent uses every tool Hermes gives it: the terminal, files, web search, code execution and the tools of any MCP server you connect, with Hermes's approvals in front of the dangerous ones. You choose which, per platform, with `platform_toolsets.rocketchat`. The plugin only carries the conversation, on purpose. It is the same scope as Hermes's own Slack, Mattermost and Telegram adapters, a transport bug cannot become a tool that reads or posts where it should not, and a tool that lives in Hermes or an MCP server works from every channel.
 
 Rocket.Chat itself works the same way: to let the agent search a room, read its history or post elsewhere, connect an MCP server. Rocket.Chat 8.8 and later ships a native one (Enterprise plans with the AI add-on; alpha), and community servers exist:
 
@@ -187,59 +172,7 @@ hermes config set platform_toolsets.rocketchat '[terminal, rocketchat]'   # the 
 
 With the optional signed asker token, such a server knows who is really asking. See [security](docs/security.md#asker-token).
 
-### A question and its answer
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor A as Alice
-    participant RC as Rocket.Chat
-    participant P as Plugin
-    participant H as Hermes core
-    A->>RC: @hermes when is the release?
-    RC-->>P: DDP stream-room-messages
-    P->>P: classify_inbound: mention, allowlist, dedup, command guard
-    P->>RC: react with eyes (acknowledged)
-    P->>RC: REST history since Alice's previous mention
-    P->>H: MessageEvent: text, room context, files, session key
-    Note over H: session, model, tools, approvals
-    H->>P: send(reply, reply_to)
-    P->>P: record in the outbound duplicate guard
-    P->>RC: REST postMessage: quote of the question, @alice
-    P->>RC: remove the eyes reaction
-    RC-->>A: the answer, in the thread if asked in one
-```
-
-### A dangerous command and its buttons
-
-Each person has their own session in a room, so a click only reaches the session of the person who clicked.
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor A as Alice
-    actor B as Bob
-    participant RC as Rocket.Chat
-    participant P as Plugin
-    participant H as Hermes core
-    A->>RC: @hermes delete the old build
-    RC-->>P: mention
-    P->>H: MessageEvent (Alice's session)
-    H->>P: _send_exec_approval_prompt
-    P->>RC: card with Allow Once / Deny buttons
-    B->>RC: clicks Allow Once
-    RC-->>P: "@hermes /approve" from Bob
-    P->>H: /approve in Bob's session
-    H->>P: No pending command to approve
-    P->>RC: reply to Bob, nothing runs
-    A->>RC: clicks Allow Once
-    RC-->>P: "@hermes /approve" from Alice
-    P->>H: /approve in Alice's session
-    Note over H: the command runs
-    P->>RC: replace the card: "Answered by @alice"
-    H->>P: result
-    P->>RC: answer to Alice
-```
+Step by step, as sequence diagrams: [a question and its answer, and a dangerous command with its buttons](docs/architecture.md#a-question-and-its-answer).
 
 ## Quick start
 
