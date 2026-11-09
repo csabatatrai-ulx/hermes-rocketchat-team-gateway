@@ -17,9 +17,13 @@ Supports **Rocket.Chat 8.7 – 9.x** from one code path. Requires **Hermes 0.22.
 - **Built for shared rooms.** Each person gets their own session and room context, Hermes commands are blocked over chat unless allowed, and only the person who asked can approve their dangerous command.
 - **Tested live.** 750+ unit tests in CI against the oldest supported and the newest Hermes release, plus end-to-end runs with the official Hermes 0.23.0 image against Rocket.Chat 8.9.1, including a restart, a network outage and real clicks on the approval buttons.
 
+Demo video (1:29): two people in a shared room, the approval buttons and the personal assistant.
+
 https://github.com/user-attachments/assets/3a8107bc-dd71-4a02-9eed-7d476e32b55a
 
 ### ChatOps: a fix that waits for a human
+
+Demo video (0:49):
 
 https://github.com/user-attachments/assets/13bf2138-55c0-4fbd-9e7d-f0fc7ff10732
 
@@ -298,6 +302,16 @@ Rocket.Chat: DDP subscribed to stream-room-messages
 ```
 
 Then mention the bot in a room it belongs to, or send it a DM. `@hermes /whoami` answers instantly without a model call and shows who the bot thinks you are.
+
+## Security model
+
+| Question | Answer |
+|---|---|
+| Who can talk to the bot? | People in the rooms the bot is a member of, narrowed by `ROCKETCHAT_ALLOWED_USERS`. A mention cannot pull it into another room. |
+| Who can run a Hermes command over chat? | Nobody, unless that command is allowed. Every `/word` is refused by default. |
+| Who can approve a dangerous command? | Only the person who asked. Each click runs as the authenticated person who made it. |
+| What does the model see from other people? | The room since the asker's previous mention, marked as context. Senders outside the allowlist are marked `[unverified sender]`. |
+| What is up to your Hermes configuration? | Which tools the bot has, the approval mode, which commands count as dangerous, and memory. See [what the adapter does not do](docs/security.md#what-it-does-not-do). |
 
 ## What this plugin does on your system
 
