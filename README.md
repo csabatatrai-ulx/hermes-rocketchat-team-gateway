@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/images/banner.webp" width="100%" alt="Rocket.Chat Team Gateway for Hermes Agent. One AI bot. A whole team. Zero chaos. Developed at ULX. Artwork: Hermes, the messenger, connecting chat messages across a starry sky."></p>
+![Rocket.Chat Team Gateway for Hermes Agent. One AI bot. A whole team. Zero chaos. Developed at ULX. Artwork: Hermes, the messenger, connecting chat messages across a starry sky.](docs/images/banner.webp)
 
 # Rocket.Chat Team Gateway for Hermes Agent
 
@@ -346,7 +346,7 @@ Both register the Hermes platform name `rocketchat`, so enable only one; the las
 
 ## Acknowledgements
 
-<a href="https://ulx.hu/"><img src="docs/images/ulx-logo.png" alt="ULX: enterprise open source IT" width="355"></a>
+[![ULX: enterprise open source IT](docs/images/ulx-logo-small.png)](https://ulx.hu/)
 
 Developed by **Csaba A. Tátrai** ([LinkedIn](https://www.linkedin.com/in/csabatatrai-datascientist/)) at [Ulx Kft.](https://ulx.hu/), an enterprise open source IT company, and released as open source with its permission.
 
