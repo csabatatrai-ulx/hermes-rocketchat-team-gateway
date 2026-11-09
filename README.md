@@ -3,6 +3,9 @@
 # Rocket.Chat Team Gateway for Hermes Agent
 
 [![CI](https://github.com/csabatatrai-ulx/hermes-rocketchat-team-gateway/actions/workflows/ci.yml/badge.svg)](https://github.com/csabatatrai-ulx/hermes-rocketchat-team-gateway/actions/workflows/ci.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+[![Hermes Agent 0.22.3+](https://img.shields.io/badge/Hermes%20Agent-0.22.3%2B-6d28d9)](https://hermes-agent.nousresearch.com/)
+[![Dependencies: aiohttp only, also used by Hermes's own messaging adapters](https://img.shields.io/badge/dependencies-aiohttp%20only-2e7d32)](requirements.txt)
 
 **Bringing Hermes Agent into the enterprise team chat.** Rocket.Chat is the open source, self-hosted chat that organizations choose when their conversations must stay on their own servers. This adapter makes Hermes a safe colleague there: one bot for a whole team, default-deny commands, and approval buttons so a person decides on dangerous actions.
 
