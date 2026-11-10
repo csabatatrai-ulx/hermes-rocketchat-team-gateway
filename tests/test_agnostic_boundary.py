@@ -24,6 +24,7 @@ AGNOSTIC_MODULES = [
     "asker.py",
     "builtin_commands.py",
     "config.py",
+    "context_refs.py",
     "dedup.py",
     "dm_session.py",
     "history.py",

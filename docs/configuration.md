@@ -30,6 +30,7 @@ Every setting is a `ROCKETCHAT_*` environment variable, normally in `~/.hermes/.
 | `ROCKETCHAT_REQUIRE_MENTION` | `true` | Rooms need an @mention (never a 1:1 DM) |
 | `ROCKETCHAT_IGNORE_SENDERS` | empty | Usernames or user IDs that never start a turn, such as other bots |
 | `ROCKETCHAT_DM_ONLY` | `false` | Work only in 1:1 DMs; a room mention gets one notice per room and never a turn |
+| `ROCKETCHAT_ALLOW_CONTEXT_REFERENCES` | `false` | Let Hermes expand `@file:`, `@folder:`, `@git:`, `@url:`, `@diff` and `@staged` in the asker's own message. Off by default, because anyone who can reach the bot could attach files from its workspace. The room context and inserted documents stay inert either way. See [Security](security.md#context-references) |
 
 ## Conversation
 

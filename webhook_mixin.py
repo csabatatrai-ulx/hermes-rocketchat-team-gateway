@@ -32,6 +32,7 @@ from .builtin_commands import (
     parse_builtin_command_name,
     blocked_persistent_approval,
 )
+from .context_refs import neutralize_context_references
 from .dm_session import (
     bot_replied_since,
     is_group_direct_room,
@@ -666,11 +667,16 @@ class WebhookInboundMixin:
             )
 
             media = await self._download_trigger_files(decision)
-            event_text = text
+            # Core expands @file:/@url:/... references in all of this before the model runs
+            # (context_refs.py): the asker's own text only when the operator allows it, the room
+            # context and inserted documents never.
+            event_text = text if cfg.allow_context_references else neutralize_context_references(text)
+            channel_context = neutralize_context_references(channel_context)
             if media.injected_text:
                 # The pattern of Hermes's Discord adapter: an inserted document goes IN
                 # FRONT of the request (see media.py).
-                event_text = f"{media.injected_text}\n\n{text}" if text else media.injected_text
+                injected = neutralize_context_references(media.injected_text)
+                event_text = f"{injected}\n\n{event_text}" if event_text else injected
             event = MessageEvent(
                 text=event_text,
                 message_type=getattr(MessageType, message_type_name(media.kinds)),

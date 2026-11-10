@@ -4,7 +4,7 @@ Every number below comes from a run, not from a claim. The live runs used Rocket
 
 | What was checked | Result |
 |---|---|
-| Unit and contract tests in CI, on Hermes 0.22.3 (oldest supported) and 0.23.0 | 750+ pass on both |
+| Unit and contract tests in CI, on Hermes 0.22.3 (oldest supported) and 0.23.0 | 779 pass on both |
 | `hermes plugins validate --install-deps` | Passes, no private core imports |
 | End-to-end scenarios: mentions, threads, DMs, files both ways, concurrent askers, the command guard | 39 / 39 |
 | Approval buttons clicked in a room and a thread, including another person's click doing nothing | 16 / 16 |
@@ -13,9 +13,22 @@ Every number below comes from a run, not from a claim. The live runs used Rocket
 | Gateway restart and network outage, with catch-up | 14 / 14 |
 | Cron delivery through the running gateway, and with the gateway stopped | 2 / 2 |
 | Refused commands such as `/yolo`, `/tools`, `/cron` and unknown `/words` | 0 model calls |
+| `@file:` and `@folder:` from a room member, directly and hidden in an earlier message of an unverified sender | 0 files attached (before the fix: `config.yaml` attached, `memories/` listed) |
 | Real model (Nous Portal): room context, identity, threads, long answers, approval | Pass |
 | Personal assistant, a second Hermes with the `personal` preset and a real model: DM questions, memory across sessions, preset commands, `/sethome` and a delivered reminder, `/yolo` refused, other people and rooms ignored | 19 / 19 |
 | Fully local: the same real-model checks against a self-hosted open-weight model on vLLM, no cloud model service (team bot: room context, identity, threads, long answers, approval; personal assistant: all of the above) | 11 / 11 and 19 / 19 |
+
+## Context references
+
+Hermes expands `@file:` and the other `@` references in every incoming chat message before the model runs ([why it matters](security.md#context-references)). The check, on the official Hermes 0.23.0 image with Rocket.Chat 8.9.1, read the turn text Hermes stored in its session database:
+
+| Message | Before the fix | With the fix (default) | With `ROCKETCHAT_ALLOW_CONTEXT_REFERENCES=true` |
+|---|---|---|---|
+| bob, an allowed member: `@hermes ... @file:/opt/data/config.yaml @folder:/opt/data/memories` | Both attached to the turn | Plain text, nothing attached | Both attached, as Hermes does by default |
+| carol, an unverified sender, writes `@file:...` without a mention; then alice mentions the bot | Expansion attempted from the room context | Plain text, nothing attached | Plain text, nothing attached |
+| Gateway start with the switch on | | | A warning in the log |
+
+Hermes itself refused `/opt/data/.env` and `auth.json` before the fix too; everything else under the workspace was readable. The unit tests in `tests/test_context_refs.py` check the same three paths (message, room context, inserted document) and that Hermes's own parser finds no reference in the neutralised text.
 
 ## How these were measured
 

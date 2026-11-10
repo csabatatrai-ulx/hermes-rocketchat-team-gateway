@@ -52,6 +52,8 @@ hermes config set memory.user_profile_enabled false
 
 Hermes's default `smart` approval mode lets a helper model approve flagged commands, so no one is asked. The reasons behind each setting are in [Security](security.md).
 
+`@file:`, `@url:` and the other Hermes `@` references in messages are kept inert by default, so a room member cannot attach files from the bot's workspace. For a bot only you use, `ROCKETCHAT_ALLOW_CONTEXT_REFERENCES=true` turns this off ([why](security.md#context-references)).
+
 ## 5. Start and check
 
 ```bash

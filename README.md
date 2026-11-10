@@ -13,7 +13,7 @@ Supports **Rocket.Chat 8.7 – 9.x** from one code path. Requires **Hermes 0.22.
 
 - **Standalone, as [Hermes asks of third-party integrations](https://github.com/NousResearch/hermes-agent/pull/4637#issuecomment-4950466375).** Rocket.Chat support is a long-standing request ([#3725](https://github.com/NousResearch/hermes-agent/issues/3725), [#94576](https://github.com/NousResearch/hermes-agent/issues/94576)). This plugin changes nothing in Hermes core and keeps up with Rocket.Chat and Hermes releases itself; a contract test covers every Hermes interface it uses.
 - **Built for shared rooms.** Each person gets their own session and room context, Hermes commands are blocked over chat unless allowed, and only the person who asked can approve their dangerous command.
-- **Tested live.** 770 unit tests in CI against the oldest supported and the newest Hermes release, plus end-to-end runs with the official Hermes 0.23.0 image against Rocket.Chat 8.9.1, including a restart, a network outage and real clicks on the approval buttons.
+- **Tested live.** 779 unit tests in CI against the oldest supported and the newest Hermes release, plus end-to-end runs with the official Hermes 0.23.0 image against Rocket.Chat 8.9.1, including a restart, a network outage and real clicks on the approval buttons.
 
 Demo video (1:29): two people in a shared room, the approval buttons and the personal assistant.
 
@@ -98,7 +98,7 @@ Every number below comes from a run, not from a claim. The live runs used Rocket
 
 | What was checked | Result |
 |---|---|
-| Unit and contract tests in CI, on Hermes 0.22.3 (oldest supported) and 0.23.0 | 770 pass on both |
+| Unit and contract tests in CI, on Hermes 0.22.3 (oldest supported) and 0.23.0 | 779 pass on both |
 | `hermes plugins validate --install-deps` | Passes, no private core imports |
 | End-to-end scenarios: mentions, threads, DMs, files both ways, concurrent askers, the command guard | 39 / 39 |
 | Approval buttons clicked in a room and a thread, including another person's click doing nothing | 16 / 16 |
@@ -107,6 +107,7 @@ Every number below comes from a run, not from a claim. The live runs used Rocket
 | Gateway restart and network outage, with catch-up | 14 / 14 |
 | Cron delivery through the running gateway, and with the gateway stopped | 2 / 2 |
 | Refused commands such as `/yolo`, `/tools`, `/cron` and unknown `/words` | 0 model calls |
+| `@file:` and `@folder:` from a room member, directly and hidden in an earlier message of an unverified sender | 0 files attached (before the fix: `config.yaml` attached, `memories/` listed) |
 | Real model (Nous Portal): room context, identity, threads, long answers, approval | Pass |
 | Personal assistant, a second Hermes with the `personal` preset and a real model: DM questions, memory across sessions, preset commands, `/sethome` and a delivered reminder, `/yolo` refused, other people and rooms ignored | 19 / 19 |
 | Fully local: the same real-model checks against a self-hosted open-weight model on vLLM, no cloud model service (team bot: room context, identity, threads, long answers, approval; personal assistant: all of the above) | 11 / 11 and 19 / 19 |
@@ -219,6 +220,8 @@ hermes config set memory.user_profile_enabled false
 
 Hermes's default `smart` mode lets a helper model approve flagged commands, so no one is asked.
 
+`@file:`, `@url:` and the other Hermes `@` references in messages are kept inert by default, so a room member cannot attach files from the bot's workspace. For a bot only you use, `ROCKETCHAT_ALLOW_CONTEXT_REFERENCES=true` turns this off ([why](docs/security.md#context-references)).
+
 ### 4. Start and check
 
 ```bash
@@ -244,6 +247,7 @@ Then mention the bot in a room it belongs to, or send it a DM. `@hermes /whoami`
 | Who can run a Hermes command over chat? | Nobody, unless that command is allowed. Every `/word` is refused by default. |
 | Who can approve a dangerous command? | Only the person who asked. Each click runs as the authenticated person who made it. |
 | What does the model see from other people? | The room since the asker's previous mention, marked as context. Senders outside the allowlist are marked `[unverified sender]`. |
+| Can a message make the bot read a file or fetch a URL by itself? | No. Hermes expands `@file:`, `@folder:`, `@git:` and `@url:` in incoming messages before the model runs, with no tool call. The adapter keeps these inert in the message, the room context and attached documents. One person running their own bot can turn it off with `ROCKETCHAT_ALLOW_CONTEXT_REFERENCES=true`. See [context references](docs/security.md#context-references). |
 | What is up to your Hermes configuration? | Which tools the bot has, the approval mode, which commands count as dangerous, and memory. See [what the adapter does not do](docs/security.md#what-it-does-not-do). |
 
 ## What this plugin does on your system

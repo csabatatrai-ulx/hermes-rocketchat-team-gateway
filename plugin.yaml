@@ -60,6 +60,10 @@ optional_env:
     description: "Work only in one-to-one DMs: a room mention gets a one-time notice, never an agent turn (default false; for a personal Hermes)"
     prompt: "DM only? (true/false)"
     password: false
+  - name: ROCKETCHAT_ALLOW_CONTEXT_REFERENCES
+    description: "Let Hermes expand @file:, @folder:, @git:, @url:, @diff and @staged in the asker's own message (default false: anyone who can reach the bot could attach files from its workspace; room context and documents stay inert either way)"
+    prompt: "Expand @file:/@url: references in messages? (true/false)"
+    password: false
   - name: ROCKETCHAT_REPLY_QUOTE
     description: "In rooms, quote the question in the first message of the answer (link on the server's Site_Url, rendered as a quote card); never in a 1:1 DM (default true)"
     prompt: "Quote the question in rooms? (true/false)"

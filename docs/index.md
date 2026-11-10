@@ -72,7 +72,7 @@ hide:
 
     ---
 
-    Every `/word` is refused unless allowed, without asking Hermes what a command is. Dangerous actions wait for the person who asked to click.
+    Every `/word` is refused unless allowed, without asking Hermes what a command is. Dangerous actions wait for the person who asked to click. A message cannot attach the bot's files with `@file:`.
 
     [:octicons-arrow-right-24: Commands and approvals](commands.md)
 

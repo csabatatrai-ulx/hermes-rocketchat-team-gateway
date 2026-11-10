@@ -12,6 +12,7 @@ Rocket.Chat authorises every API call as the bot, not as the person who asked. T
 | Bots answering each other forever | `ROCKETCHAT_IGNORE_SENDERS`; own messages filtered |
 | A prefix match wakes the wrong bot | Bounded mention match (`@hermes` does not match `@hermes-beta`) |
 | Forged markers in a message | Continuation lines indented; column 0 is the gateway's |
+| A member attaches files from the bot's workspace with `@file:` or makes it fetch a URL with `@url:` | [`@` references kept inert](#context-references); `ROCKETCHAT_ALLOW_CONTEXT_REFERENCES=true` turns it off |
 | Old message re-triggers after a reaction | Time-based dedup and age limit |
 | Unauthenticated webhook | Refuses to start without a secret; constant-time compare; loopback by default |
 | Token sent elsewhere | Redirects not followed |
@@ -28,6 +29,18 @@ The adapter cannot set Hermes's configuration. These are yours:
 - **Prompt injection.** Room context is marked as context, but it is still text a model reads. Give the bot only the tools its users may trigger, and keep approvals on for consequential ones.
 
 Use a dedicated bot account with minimal room memberships, never an administrator token.
+
+## Context references
+
+Hermes expands `@file:`, `@folder:`, `@git:`, `@url:`, `@diff` and `@staged` in every message it receives from a chat platform, before the model runs. It reads the file, lists the folder, runs the git command or fetches the page, and appends the result to the turn. On a terminal that is your own shortcut. In a shared room it means anyone who can reach the bot could attach a file from the bot's workspace, or make the bot's host fetch an address on your internal network, with one message. This is not a tool call, so no tool list, approval or `pre_tool_call` plugin sees it. Hermes blocks only credential files (`.env`, `auth.json`, `~/.ssh`).
+
+Hermes also expands references inside the room context block. A reference hidden in an earlier message, even one from an unverified sender, would be expanded when someone else mentions the bot.
+
+**What the adapter does.** Before a message reaches Hermes, the adapter puts an invisible zero-width space after the `@` of each such reference, in three places: the asker's message, the room context, and the text of an inserted document. Hermes then reads the reference as plain text. What people see in Rocket.Chat does not change. If the bot has a file or web tool, the model can still open the file or page through it, and then your tool list and approvals apply.
+
+Verified live on Hermes 0.23.0: without this, a room member's `@file:` attached the bot's `config.yaml` and listed its `memories/` folder ([evidence](evidence.md#context-references)).
+
+**How to turn it off.** Set `ROCKETCHAT_ALLOW_CONTEXT_REFERENCES=true` in `~/.hermes/.env` and restart the gateway. References in the asker's own message are then expanded as Hermes does by default. The room context and inserted documents stay inert either way, because neither is the asker's request. The adapter logs a warning at startup while the switch is on. Turn it on only for a bot that just you, or people who may read its workspace, can reach.
 
 ## Asker token
 

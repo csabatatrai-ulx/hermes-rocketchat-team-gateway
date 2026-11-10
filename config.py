@@ -422,6 +422,10 @@ class RocketChatConfig:
     # For a personal Hermes running with its owner's full rights, where anyone's message
     # in a shared room would run the owner's agent.
     dm_only: bool = False
+    # ROCKETCHAT_ALLOW_CONTEXT_REFERENCES: let Hermes expand ``@file:``, ``@url:`` and the other
+    # ``@`` context references in the asker's own message. Off by default: in a shared room it
+    # would let anyone who can reach the bot attach files from its workspace (context_refs.py).
+    allow_context_references: bool = False
     # Reply reference in rooms (reply_reference.py): quote of the question and @mention.
     # Neither goes on an answer in a 1:1 DM.
     reply_quote: bool = True
@@ -607,6 +611,7 @@ def load_config(
         allowed_users=as_list(_pick("allowed_users", extra, env)),
         allow_all_users=_flag("allow_all_users", extra, env, False),
         dm_only=_flag("dm_only", extra, env, False),
+        allow_context_references=_flag("allow_context_references", extra, env, False),
         reply_quote=_flag("reply_quote", extra, env, True),
         reply_mention=_flag("reply_mention", extra, env, True),
         # Env only (like ROCKETCHAT_ALLOW_BUILTIN_*): the platform guidance is fixed at

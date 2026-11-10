@@ -178,6 +178,12 @@ class RocketChatAdapter(
         cfg = _config_from_platform(config)
         self._cfg: RocketChatConfig = cfg
         self._warn_if_memory_is_shared(cfg)
+        if cfg.allow_context_references:
+            logger.warning(
+                "Rocket.Chat: ROCKETCHAT_ALLOW_CONTEXT_REFERENCES is on, so @file:, @folder:, @git: and @url: in a "
+                "message are expanded by Hermes before the model runs: anyone who can reach this bot can attach "
+                "files from its workspace or make it fetch a URL. Turn it off for a shared bot."
+            )
 
 
         self._base_url: str = cfg.base_url

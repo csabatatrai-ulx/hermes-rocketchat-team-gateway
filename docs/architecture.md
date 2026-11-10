@@ -135,6 +135,7 @@ The plugin's parts inside the gateway, and the modules that implement them.
 | `standalone.py` | Delivery from cron without a live adapter | Yes |
 | `inbound.py` | The decision chain, pure | No |
 | `builtin_commands.py` | Command guard | No |
+| `context_refs.py` | Keeps Hermes's `@file:`/`@url:` references inert in chat text | No |
 | `history.py`, `room_session.py`, `dm_session.py` | Context windows and boundaries | No |
 | `media.py` | Attachment handling | No |
 | `dedup.py`, `shared_state.py` | Duplicate suppression, process-wide state | No |
