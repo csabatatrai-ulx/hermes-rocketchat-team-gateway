@@ -13,7 +13,7 @@ Supports **Rocket.Chat 8.7 – 9.x** from one code path. Requires **Hermes 0.22.
 
 - **Standalone, as [Hermes asks of third-party integrations](https://github.com/NousResearch/hermes-agent/pull/4637#issuecomment-4950466375).** Rocket.Chat support is a long-standing request ([#3725](https://github.com/NousResearch/hermes-agent/issues/3725), [#94576](https://github.com/NousResearch/hermes-agent/issues/94576)). This plugin changes nothing in Hermes core and keeps up with Rocket.Chat and Hermes releases itself; a contract test covers every Hermes interface it uses.
 - **Built for shared rooms.** Each person gets their own session and room context, Hermes commands are blocked over chat unless allowed, and only the person who asked can approve their dangerous command.
-- **Tested live.** 779 unit tests in CI against the oldest supported and the newest Hermes release, plus end-to-end runs with the official Hermes 0.23.0 image against Rocket.Chat 8.9.1, including a restart, a network outage and real clicks on the approval buttons.
+- **Tested live.** 780 unit tests in CI against the oldest supported and the newest Hermes release, plus end-to-end runs with the official Hermes 0.23.0 image against Rocket.Chat 8.9.1, including a restart, a network outage and real clicks on the approval buttons.
 
 Demo video (1:29): two people in a shared room, the approval buttons and the personal assistant.
 
@@ -98,7 +98,7 @@ Every number below comes from a run, not from a claim. The live runs used Rocket
 
 | What was checked | Result |
 |---|---|
-| Unit and contract tests in CI, on Hermes 0.22.3 (oldest supported) and 0.23.0 | 779 pass on both |
+| Unit and contract tests in CI, on Hermes 0.22.3 (oldest supported) and 0.23.0 | 780 pass on both |
 | `hermes plugins validate --install-deps` | Passes, no private core imports |
 | End-to-end scenarios: mentions, threads, DMs, files both ways, concurrent askers, the command guard | 39 / 39 |
 | Approval buttons clicked in a room and a thread, including another person's click doing nothing | 16 / 16 |

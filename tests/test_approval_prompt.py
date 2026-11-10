@@ -39,6 +39,20 @@ class ApprovalPromptTests(unittest.TestCase):
         self.assertIn("@hermes /approve", args[1])
         self.assertEqual([b["msg"] for b in kwargs["attachments"][0]["actions"]], ["@hermes /approve", "@hermes /deny"])
 
+    def test_the_card_shows_the_whole_command_byte_for_byte(self):
+        # Hermes counts a command up to the adapter's card budget as fully shown, and Approve runs
+        # all of it, so the card must not cut or reflow it: tabs, runs of spaces and ``~`` included.
+        from gateway.platforms.base import BasePlatformAdapter
+
+        self.assertEqual(self.mod.RocketChatAdapter._EA_CMD_BUDGET, BasePlatformAdapter._EA_CMD_BUDGET)
+        adapter = self._adapter()
+        command = ("cd ~/srv &&\tfind .  -name '*.log'   -mtime +7 ; " * 60)[:2900] + " && rm -rf ~/srv/tmp"
+        prompt = self._prompt("s-long")
+        prompt.text = adapter._format_exec_approval(command, "delete in root path")
+        self.assertIn(command, prompt.text)  # core showed it whole: under the budget
+        self.assertTrue(asyncio.run(adapter._send_exec_approval_prompt(prompt)).success)
+        self.assertIn(f"```\n{command}\n```", self.rest.post_message.await_args.args[1])
+
     def _confirm(self, adapter, key="s9"):
         return asyncio.run(adapter.send_slash_confirm(
             chat_id="R1", title="/new", message="⚠️ **Confirm /new**\n\nFresh session.\n\nChoose:\n• **Always Approve**",

@@ -42,6 +42,8 @@ When the agent wants to run something dangerous and Hermes's `approvals.mode` ca
 
 A button sends `@bot /approve` or `@bot /deny` as the person who clicked it, the same message they could type. So the same checks apply: the allowlist, the command guard, Hermes's admin lists and the session. In a room, someone else's click reaches their own session, where nothing is pending. In a shared thread any participant can answer, as with the typed command.
 
+The prompt is Hermes's own text, unchanged: the whole command up to Hermes's 3,000-character card limit, with its tabs and spaces, in a code block. A longer command is cut by Hermes itself, and Hermes then treats it as not fully shown. So what Accept runs is what the card shows.
+
 Only choices the guard would allow get a button, so "always" is not offered unless `ROCKETCHAT_ALLOW_BUILTIN_ALWAYS=true`. `ROCKETCHAT_APPROVAL_BUTTONS=false` returns to Hermes's plain-text prompt.
 
 ## Confirming `/new`
