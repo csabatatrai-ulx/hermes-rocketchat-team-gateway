@@ -1,4 +1,4 @@
-<a href="https://csabatatrai-ulx.github.io/hermes-rocketchat-team-gateway/"><img src="docs/images/banner.webp" alt="Rocket.Chat Team Gateway for Hermes Agent. One AI bot. A whole team. Zero chaos. Developed at ULX. Artwork: Hermes, the messenger, connecting chat messages across a starry sky."></a>
+[![Rocket.Chat Team Gateway for Hermes Agent. One AI bot. A whole team. Zero chaos. Developed at ULX. Artwork: Hermes, the messenger, connecting chat messages across a starry sky.](docs/images/banner.webp)](https://csabatatrai-ulx.github.io/hermes-rocketchat-team-gateway/)
 
 # Rocket.Chat Team Gateway for Hermes Agent
 

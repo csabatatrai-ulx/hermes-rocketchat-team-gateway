@@ -24,6 +24,8 @@ docker compose -f try/compose.yaml exec -u hermes hermes hermes portal
 docker compose -f try/compose.yaml restart hermes
 ```
 
+Free-tier models can be slow: one took two minutes for a single reply in our test. `meituan/longcat-2.5:free` answered in 3 to 12 seconds, approval prompt included (tested 2026-11-11), so pick that one when asked for a model.
+
 Or use any OpenAI-compatible endpoint from the first start (`down -v` first if the stack already ran):
 
 ```bash

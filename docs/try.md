@@ -42,6 +42,8 @@ Then choose a real model:
     docker compose -f try/compose.yaml restart hermes
     ```
 
+    Free-tier models can be slow: one took two minutes for a single reply in our test. `meituan/longcat-2.5:free` answered in 3 to 12 seconds, approval prompt included (tested 2026-11-11), so pick that one when asked for a model.
+
 === "Any OpenAI-compatible endpoint"
 
     Start the stack with the endpoint instead (`down -v` first if it already ran):
