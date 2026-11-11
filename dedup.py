@@ -15,7 +15,7 @@ every room message would evict an old @mention's id within hours on a busy serve
 days-old question would get answered again. Therefore:
 
 * time-based retention (``DEFAULT_INBOUND_DEDUP_RETENTION_HOURS``, env
-  ``ROCKETCHAT_INBOUND_DEDUP_RETENTION_HOURS``); the count limit
+  ``ROCKETCHAT_TEAM_INBOUND_DEDUP_RETENTION_HOURS``); the count limit
   (``DEFAULT_MAX_SEEN_MESSAGE_IDS``) is only a memory safety net;
 * age limit: a message older than the retention window (Rocket.Chat ``ts``) never
   reaches the agent, whatever the cache says (``inbound.classify_inbound``);

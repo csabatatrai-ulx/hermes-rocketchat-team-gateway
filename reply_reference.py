@@ -10,8 +10,8 @@ Telegram solves this with a native reply. The Rocket.Chat equivalent:
 * **@mention**: the asker gets notified.
 
 Only in rooms (and DMs with more than two people); a 1:1 DM needs neither.
-Both can be switched off (``ROCKETCHAT_REPLY_QUOTE``,
-``ROCKETCHAT_REPLY_MENTION``). Only the first answer message carries them (that
+Both can be switched off (``ROCKETCHAT_TEAM_REPLY_QUOTE``,
+``ROCKETCHAT_TEAM_REPLY_MENTION``). Only the first answer message carries them (that
 is where Hermes core passes the question's id as ``reply_to``); progress bubbles
 and further chunks of a long answer do not.
 """

@@ -78,9 +78,9 @@ The same plugin can serve one person in their DMs, by configuration only: answer
 > **A personal assistant needs its own Hermes instance and bot account per person.** One Hermes has one owner's sessions, memory, model and cron jobs. Never use the `personal` preset on a bot that several people can talk to.
 
 ```dotenv
-ROCKETCHAT_DM_ONLY=true
-ROCKETCHAT_ALLOWED_USERS=<owner user id>
-ROCKETCHAT_ALLOW_BUILTIN_PRESET=personal
+ROCKETCHAT_TEAM_DM_ONLY=true
+ROCKETCHAT_TEAM_ALLOWED_USERS=<owner user id>
+ROCKETCHAT_TEAM_ALLOW_BUILTIN_PRESET=personal
 ```
 
 Step by step, with the settings and a checklist: [personal assistant](docs/personal-assistant.md).
@@ -164,13 +164,13 @@ The plugin only carries messages. Sessions, the agent and approvals stay in Herm
 
 ### Tools: everything Hermes has, none of its own
 
-No tools of its own does not mean a bot without tools. In Rocket.Chat the agent uses every tool Hermes gives it: the terminal, files, web search, code execution and the tools of any MCP server you connect, with Hermes's approvals in front of the dangerous ones. You choose which, per platform, with `platform_toolsets.rocketchat`. The plugin only carries the conversation, on purpose. It is the same scope as Hermes's own Slack, Mattermost and Telegram adapters, a transport bug cannot become a tool that reads or posts where it should not, and a tool that lives in Hermes or an MCP server works from every channel.
+No tools of its own does not mean a bot without tools. In Rocket.Chat the agent uses every tool Hermes gives it: the terminal, files, web search, code execution and the tools of any MCP server you connect, with Hermes's approvals in front of the dangerous ones. You choose which, per platform, with `platform_toolsets.rocketchat_team`. The plugin only carries the conversation, on purpose. It is the same scope as Hermes's own Slack, Mattermost and Telegram adapters, a transport bug cannot become a tool that reads or posts where it should not, and a tool that lives in Hermes or an MCP server works from every channel.
 
 Rocket.Chat itself works the same way: to let the agent search a room, read its history or post elsewhere, connect an MCP server. Rocket.Chat 8.8 and later ships a native one (Enterprise plans with the AI add-on; alpha), and community servers exist:
 
 ```bash
 hermes mcp add rocketchat --url https://chat.example.com/api/v1/mcp   # authentication: see Rocket.Chat's MCP documentation
-hermes config set platform_toolsets.rocketchat '[terminal, rocketchat]'   # the tools this bot may use
+hermes config set platform_toolsets.rocketchat_team '[terminal, rocketchat]'   # the tools this bot may use
 ```
 
 With the optional signed asker token, such a server knows who is really asking. See [security](docs/security.md#asker-token).
@@ -202,19 +202,19 @@ hermes plugins install csabatatrai-ulx/hermes-rocketchat-team-gateway --enable
 Run `hermes gateway setup` and choose Rocket.Chat. The wizard checks the credentials against the server before saving them. Or put the settings in `~/.hermes/.env` (`chmod 600`):
 
 ```dotenv
-ROCKETCHAT_URL=https://chat.example.com
-ROCKETCHAT_BOT_USERNAME=hermes
-ROCKETCHAT_USER_ID=<bot user id>
-ROCKETCHAT_TOKEN=<bot personal access token>
-ROCKETCHAT_ALLOWED_USERS=<user id>,<user id>    # user IDs, not usernames
+ROCKETCHAT_TEAM_URL=https://chat.example.com
+ROCKETCHAT_TEAM_BOT_USERNAME=hermes
+ROCKETCHAT_TEAM_USER_ID=<bot user id>
+ROCKETCHAT_TEAM_TOKEN=<bot personal access token>
+ROCKETCHAT_TEAM_ALLOWED_USERS=<user id>,<user id>    # user IDs, not usernames
 ```
 
-Decide who may talk to the bot: `ROCKETCHAT_ALLOWED_USERS`, Hermes pairing, or on a closed server `ROCKETCHAT_ALLOW_ALL_USERS=true`. Without one of them Hermes answers nobody.
+Decide who may talk to the bot: `ROCKETCHAT_TEAM_ALLOWED_USERS`, Hermes pairing, or on a closed server `ROCKETCHAT_TEAM_ALLOW_ALL_USERS=true`. Without one of them Hermes answers nobody.
 
 **Before letting real users in, give the platform an explicit tool list.** A platform plugin cannot set this for you, and without it Hermes grants the platform its full core toolset, including the terminal and file writes.
 
 ```bash
-hermes config set platform_toolsets.rocketchat '[my-mcp-server]'   # or [] for none
+hermes config set platform_toolsets.rocketchat_team '[my-mcp-server]'   # or [] for none
 hermes config set approvals.mode manual   # a person answers every dangerous command
 hermes config set memory.memory_enabled false        # one memory would be shared by everyone
 hermes config set memory.user_profile_enabled false
@@ -222,7 +222,7 @@ hermes config set memory.user_profile_enabled false
 
 Hermes's default `smart` mode lets a helper model approve flagged commands, so no one is asked.
 
-`@file:`, `@url:` and the other Hermes `@` references in messages are kept inert by default, so a room member cannot attach files from the bot's workspace. For a bot only you use, `ROCKETCHAT_ALLOW_CONTEXT_REFERENCES=true` turns this off ([why](docs/security.md#context-references)).
+`@file:`, `@url:` and the other Hermes `@` references in messages are kept inert by default, so a room member cannot attach files from the bot's workspace. For a bot only you use, `ROCKETCHAT_TEAM_ALLOW_CONTEXT_REFERENCES=true` turns this off ([why](docs/security.md#context-references)).
 
 ### 4. Start and check
 
@@ -245,22 +245,22 @@ Then mention the bot in a room it belongs to, or send it a DM. `@hermes /whoami`
 
 | Question | Answer |
 |---|---|
-| Who can talk to the bot? | People in the rooms the bot is a member of, narrowed by `ROCKETCHAT_ALLOWED_USERS`. A mention cannot pull it into another room. |
+| Who can talk to the bot? | People in the rooms the bot is a member of, narrowed by `ROCKETCHAT_TEAM_ALLOWED_USERS`. A mention cannot pull it into another room. |
 | Who can run a Hermes command over chat? | Nobody, unless that command is allowed. Every `/word` is refused by default. |
 | Who can approve a dangerous command? | Only the person who asked. Each click runs as the authenticated person who made it. |
 | What does the model see from other people? | The room since the asker's previous mention, marked as context. Senders outside the allowlist are marked `[unverified sender]`. |
-| Can a message make the bot read a file or fetch a URL by itself? | No. Hermes expands `@file:`, `@folder:`, `@git:` and `@url:` in incoming messages before the model runs, with no tool call. The adapter keeps these inert in the message, the room context and attached documents. One person running their own bot can turn it off with `ROCKETCHAT_ALLOW_CONTEXT_REFERENCES=true`. See [context references](docs/security.md#context-references). |
+| Can a message make the bot read a file or fetch a URL by itself? | No. Hermes expands `@file:`, `@folder:`, `@git:` and `@url:` in incoming messages before the model runs, with no tool call. The adapter keeps these inert in the message, the room context and attached documents. One person running their own bot can turn it off with `ROCKETCHAT_TEAM_ALLOW_CONTEXT_REFERENCES=true`. See [context references](docs/security.md#context-references). |
 | What is up to your Hermes configuration? | Which tools the bot has, the approval mode, which commands count as dangerous, and memory. See [what the adapter does not do](docs/security.md#what-it-does-not-do). |
 
 ## What this plugin does on your system
 
 | Behaviour | Details |
 |---|---|
-| Network | Connects only to `ROCKETCHAT_URL`: a long-lived WebSocket (`/websocket`) and REST calls. No telemetry. Redirects are not followed, so the token cannot reach another host. |
-| Listening port | None by default. `ROCKETCHAT_TRANSPORT=webhook` opens an HTTP listener on `127.0.0.1:8645` and refuses to start without a shared secret. |
+| Network | Connects only to `ROCKETCHAT_TEAM_URL`: a long-lived WebSocket (`/websocket`) and REST calls. No telemetry. Redirects are not followed, so the token cannot reach another host. |
+| Listening port | None by default. `ROCKETCHAT_TEAM_TRANSPORT=webhook` opens an HTTP listener on `127.0.0.1:8645` and refuses to start without a shared secret. |
 | Background work | One WebSocket connection with reconnect, a typing indicator loop during turns, debounced state writes. |
-| Files on disk | `$HERMES_HOME/rocketchat-plugin-dedup/`: `inbound.json`, `outbound.json` (message ids and content hashes of sent replies), `ddp_cursor.json`, `ddp_status.json`. `ROCKETCHAT_DEDUP_STATE_DIR=off` keeps them in memory. |
-| Files read | When the model sends `MEDIA:/path`, Hermes validates the path and the plugin uploads that file to the room. `ROCKETCHAT_OUTBOUND_FILES=false` turns this off. |
+| Files on disk | `$HERMES_HOME/rocketchat-plugin-dedup/`: `inbound.json`, `outbound.json` (message ids and content hashes of sent replies), `ddp_cursor.json`, `ddp_status.json`. `ROCKETCHAT_TEAM_DEDUP_STATE_DIR=off` keeps them in memory. |
+| Files read | When the model sends `MEDIA:/path`, Hermes validates the path and the plugin uploads that file to the room. `ROCKETCHAT_TEAM_OUTBOUND_FILES=false` turns this off. |
 | Files received | Attachments on the mentioning message are downloaded with the bot's token into Hermes's media cache. |
 | Credentials | Read through Hermes's profile-scoped secret reader. The plugin reads no credential files. |
 | Logs | Message text from DMs is never logged, only ids and counts. |
@@ -279,7 +279,21 @@ The Hermes plugin catalog already has a Rocket.Chat plugin, [`rocketchat-platfor
 | Dangerous commands | Hermes's text prompt | approval buttons that only the asker can use |
 | After a restart or an outage | reconnects | answers or reports the mentions it missed; no duplicate turns, even across restarts |
 
-Both register the Hermes platform name `rocketchat`, so enable only one; the last one registered wins. Switching keeps `ROCKETCHAT_URL`, `ROCKETCHAT_TOKEN`, `ROCKETCHAT_USER_ID`, `ROCKETCHAT_ALLOWED_USERS`, `platform_toolsets.rocketchat` and `deliver=rocketchat` working; add `ROCKETCHAT_BOT_USERNAME` and restart the gateway.
+The two do not clash: this plugin registers the Hermes platform id `rocketchat_team` and reads `ROCKETCHAT_TEAM_*` settings, `rocketchat-platform` registers `rocketchat` and reads `ROCKETCHAT_*`. If you run both, give each its own bot account. To switch from `rocketchat-platform`, copy `ROCKETCHAT_URL`, `ROCKETCHAT_TOKEN`, `ROCKETCHAT_USER_ID` and `ROCKETCHAT_ALLOWED_USERS` to their `ROCKETCHAT_TEAM_` names, add `ROCKETCHAT_TEAM_BOT_USERNAME`, use `platform_toolsets.rocketchat_team` and `deliver=rocketchat_team`, and restart the gateway.
+
+## Upgrading from 1.x
+
+2.0 has its own platform id, `rocketchat_team`, and reads `ROCKETCHAT_TEAM_*` instead of `ROCKETCHAT_*`. In the profile's `.env`:
+
+```bash
+sed -i 's/^ROCKETCHAT_/ROCKETCHAT_TEAM_/' ~/.hermes/.env
+```
+
+- `config.yaml`: rename the `rocketchat` keys under `platforms`, `platform_toolsets`, `platform_hints` and `display.platforms`, and a top-level `rocketchat:` section, to `rocketchat_team`
+- cron jobs: `deliver=rocketchat` becomes `deliver=rocketchat_team`
+- restart the gateway; sessions start fresh
+
+If old keys are still set and the new ones are not, the gateway log says which to rename.
 
 ## Documentation
 

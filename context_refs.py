@@ -15,7 +15,7 @@ text reaches core (the trick core itself uses for ``@everyone``). The text peopl
 Rocket.Chat is unchanged; the model reads the reference as plain text and can still open the
 file or page through a tool, where the operator's limits and approvals apply.
 
-``ROCKETCHAT_ALLOW_CONTEXT_REFERENCES=true`` keeps references in the asker's own message live.
+``ROCKETCHAT_TEAM_ALLOW_CONTEXT_REFERENCES=true`` keeps references in the asker's own message live.
 The room context and inserted documents stay inert either way: neither is the asker's request.
 """
 import re

@@ -26,13 +26,13 @@ As a second layer, a turn that Hermes itself would parse as a non-allowed comman
 **Change one:**
 
 ```dotenv
-ROCKETCHAT_ALLOW_BUILTIN_STATUS=true
-ROCKETCHAT_ALLOW_BUILTIN_RESET=false
+ROCKETCHAT_TEAM_ALLOW_BUILTIN_STATUS=true
+ROCKETCHAT_TEAM_ALLOW_BUILTIN_RESET=false
 ```
 
-Use the name with hyphens as underscores (`ROCKETCHAT_ALLOW_BUILTIN_RELOAD_MCP`). Common aliases follow their command (`/hb` follows `HEARTBEAT`). An alias the plugin does not list stays refused until it gets its own key, and a mistyped key leaves the command refused.
+Use the name with hyphens as underscores (`ROCKETCHAT_TEAM_ALLOW_BUILTIN_RELOAD_MCP`). Common aliases follow their command (`/hb` follows `HEARTBEAT`). An alias the plugin does not list stays refused until it gets its own key, and a mistyped key leaves the command refused.
 
-**Presets:** `ROCKETCHAT_ALLOW_BUILTIN_PRESET=personal` adds session management, `/model`, `/bg`, `/sethome`, `/goal` and similar commands for a bot that answers one owner. It does not belong on a shared bot, where anyone could switch the model or browse sessions: each person who wants a personal assistant needs their own Hermes instance and bot account (see [Personal assistant](personal-assistant.md)). `/yolo`, `/restart`, `/update`, `/approvals`, `/pause`, `/learn`, `/debug` and `/platform` are in no preset.
+**Presets:** `ROCKETCHAT_TEAM_ALLOW_BUILTIN_PRESET=personal` adds session management, `/model`, `/bg`, `/sethome`, `/goal` and similar commands for a bot that answers one owner. It does not belong on a shared bot, where anyone could switch the model or browse sessions: each person who wants a personal assistant needs their own Hermes instance and bot account (see [Personal assistant](personal-assistant.md)). `/yolo`, `/restart`, `/update`, `/approvals`, `/pause`, `/learn`, `/debug` and `/platform` are in no preset.
 
 The `personal` preset adds: `/sessions`, `/resume`, `/title`, `/branch`, `/retry`, `/undo`, `/compress`, `/discard`, `/status`, `/usage`, `/queue`, `/bg`, `/help`, `/commands`, `/version`, `/profile`, `/model`, `/reasoning`, `/personality`, `/footer`, `/insights`, `/always`, `/sethome`, `/heartbeat`, `/loop`, `/steer`, `/agents`, `/goal`, `/subgoal`, `/plan`, `/review` and `/refine`.
 
@@ -44,28 +44,28 @@ A button sends `@bot /approve` or `@bot /deny` as the person who clicked it, the
 
 The prompt is Hermes's own text, unchanged: the whole command up to Hermes's 3,000-character card limit, with its tabs and spaces, in a code block. A longer command is cut by Hermes itself, and Hermes then treats it as not fully shown. So what Accept runs is what the card shows.
 
-Only choices the guard would allow get a button, so "always" is not offered unless `ROCKETCHAT_ALLOW_BUILTIN_ALWAYS=true`. `ROCKETCHAT_APPROVAL_BUTTONS=false` returns to Hermes's plain-text prompt.
+Only choices the guard would allow get a button, so "always" is not offered unless `ROCKETCHAT_TEAM_ALLOW_BUILTIN_ALWAYS=true`. `ROCKETCHAT_TEAM_APPROVAL_BUTTONS=false` returns to Hermes's plain-text prompt.
 
 ## Confirming `/new`
 
-Hermes asks for confirmation before `/new` and similar commands. The prompt carries **Approve Once** and **Cancel** buttons that work the same way, and typed `/approve` and `/cancel` always work too. "Always Approve" gets a button only with `ROCKETCHAT_ALLOW_BUILTIN_ALWAYS=true`. `ROCKETCHAT_APPROVAL_BUTTONS=false` returns to Hermes's plain-text prompt.
+Hermes asks for confirmation before `/new` and similar commands. The prompt carries **Approve Once** and **Cancel** buttons that work the same way, and typed `/approve` and `/cancel` always work too. "Always Approve" gets a button only with `ROCKETCHAT_TEAM_ALLOW_BUILTIN_ALWAYS=true`. `ROCKETCHAT_TEAM_APPROVAL_BUTTONS=false` returns to Hermes's plain-text prompt.
 
 ## Persistent approval
 
-Answering a confirmation with "always", `/always`, `/remember` or `/approve always|session|permanent` writes to the gateway's whole `config.yaml`, so one room member would change it for everyone. These are refused unless `ROCKETCHAT_ALLOW_BUILTIN_ALWAYS=true`. A one-off `/approve` and `/deny` pass.
+Answering a confirmation with "always", `/always`, `/remember` or `/approve always|session|permanent` writes to the gateway's whole `config.yaml`, so one room member would change it for everyone. These are refused unless `ROCKETCHAT_TEAM_ALLOW_BUILTIN_ALWAYS=true`. A one-off `/approve` and `/deny` pass.
 
 The plain-text check covers Hermes's English words. If you set `display.language`, Hermes also accepts that language's words as an approval answer; the slash-command forms stay covered. On a shared bot, keep `approvals` on and set Hermes's admin lists below.
 
 ## Skills
 
-Skills (`/google-workspace`) are refused like any other word, and have their own allowlist with no defaults: `ROCKETCHAT_ALLOW_SKILL_<NAME>=true`. This matters because Hermes applies no admin check to skills.
+Skills (`/google-workspace`) are refused like any other word, and have their own allowlist with no defaults: `ROCKETCHAT_TEAM_ALLOW_SKILL_<NAME>=true`. This matters because Hermes applies no admin check to skills.
 
 ## Second line of defence
 
 Set Hermes's own lists as well, so Hermes refuses admin commands whatever reaches it. The two do not cover each other's scope.
 
 ```yaml
-rocketchat:
+rocketchat_team:
   group_allow_admin_from: [<admin user id>]   # rooms
   allow_admin_from: [<admin user id>]         # one-to-one DMs
 ```

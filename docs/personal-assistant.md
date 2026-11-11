@@ -33,15 +33,15 @@ Give the assistant its own Hermes home: a separate container with its own data v
 ### 3. `.env`
 
 ```dotenv
-ROCKETCHAT_URL=https://chat.example.com
-ROCKETCHAT_BOT_USERNAME=bob-assistant
-ROCKETCHAT_USER_ID=<bot user id>
-ROCKETCHAT_TOKEN=<bot personal access token>
-ROCKETCHAT_ALLOWED_USERS=<owner user id>      # the owner alone
-ROCKETCHAT_DM_ONLY=true                       # DMs only; a room mention gets one short notice
-ROCKETCHAT_ALLOW_BUILTIN_PRESET=personal      # the owner's commands
-ROCKETCHAT_STARTUP_GREETING=false
-ROCKETCHAT_TIMEZONE=Europe/Budapest           # the owner's zone, for reminders and timestamps
+ROCKETCHAT_TEAM_URL=https://chat.example.com
+ROCKETCHAT_TEAM_BOT_USERNAME=bob-assistant
+ROCKETCHAT_TEAM_USER_ID=<bot user id>
+ROCKETCHAT_TEAM_TOKEN=<bot personal access token>
+ROCKETCHAT_TEAM_ALLOWED_USERS=<owner user id>      # the owner alone
+ROCKETCHAT_TEAM_DM_ONLY=true                       # DMs only; a room mention gets one short notice
+ROCKETCHAT_TEAM_ALLOW_BUILTIN_PRESET=personal      # the owner's commands
+ROCKETCHAT_TEAM_STARTUP_GREETING=false
+ROCKETCHAT_TEAM_TIMEZONE=Europe/Budapest           # the owner's zone, for reminders and timestamps
 ```
 
 ### 4. `config.yaml`
@@ -59,7 +59,7 @@ streaming:
 
 ### 5. Start and point reminders at the DM
 
-Start the gateway, open a DM with the bot as the owner and send `!sethome`. Hermes stores the DM as its home channel, and reminders and other scheduled jobs are delivered there. You can also set `ROCKETCHAT_HOME_CHANNEL` to the DM's room ID in `.env`.
+Start the gateway, open a DM with the bot as the owner and send `!sethome`. Hermes stores the DM as its home channel, and reminders and other scheduled jobs are delivered there. You can also set `ROCKETCHAT_TEAM_HOME_CHANNEL` to the DM's room ID in `.env`.
 
 ## Several assistants on one server
 
@@ -75,7 +75,7 @@ The assistants share nothing but the Rocket.Chat server. If they use the same mo
 
 ## What stays closed
 
-`/yolo`, `/restart`, `/update`, `/approvals`, `/pause`, `/learn`, `/debug` and `/platform` are in no preset: they skip approvals, restart or update the gateway, or change its configuration. If the owner really needs one, enable it alone with its own key, for example `ROCKETCHAT_ALLOW_BUILTIN_DEBUG=true`, and restart the gateway. Any command can also be taken out of the preset with `ROCKETCHAT_ALLOW_BUILTIN_<NAME>=false`.
+`/yolo`, `/restart`, `/update`, `/approvals`, `/pause`, `/learn`, `/debug` and `/platform` are in no preset: they skip approvals, restart or update the gateway, or change its configuration. If the owner really needs one, enable it alone with its own key, for example `ROCKETCHAT_TEAM_ALLOW_BUILTIN_DEBUG=true`, and restart the gateway. Any command can also be taken out of the preset with `ROCKETCHAT_TEAM_ALLOW_BUILTIN_<NAME>=false`.
 
 ## Check it works
 

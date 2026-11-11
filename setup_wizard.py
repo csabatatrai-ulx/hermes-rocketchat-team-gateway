@@ -12,7 +12,7 @@ from typing import Any, Dict, Optional
 
 from .rest_client import RocketChatRestClient
 
-REQUIRED_ENV = ("ROCKETCHAT_URL", "ROCKETCHAT_TOKEN", "ROCKETCHAT_USER_ID", "ROCKETCHAT_BOT_USERNAME")
+REQUIRED_ENV = ("ROCKETCHAT_TEAM_URL", "ROCKETCHAT_TEAM_TOKEN", "ROCKETCHAT_TEAM_USER_ID", "ROCKETCHAT_TEAM_BOT_USERNAME")
 
 
 async def fetch_identity(url: str, token: str, user_id: str) -> Optional[Dict[str, Any]]:
@@ -68,10 +68,10 @@ def interactive_setup() -> None:
         if "bot" not in (identity.get("roles") or []):
             print_warning("This account has no bot role, so replies may hit the REST rate limit.")
     save_env_values(
-        ROCKETCHAT_URL=url,
-        ROCKETCHAT_USER_ID=user_id,
-        ROCKETCHAT_TOKEN=token,
-        ROCKETCHAT_BOT_USERNAME=username,
+        ROCKETCHAT_TEAM_URL=url,
+        ROCKETCHAT_TEAM_USER_ID=user_id,
+        ROCKETCHAT_TEAM_TOKEN=token,
+        ROCKETCHAT_TEAM_BOT_USERNAME=username,
     )
 
     print()
@@ -79,15 +79,15 @@ def interactive_setup() -> None:
     print_info("Without an allowlist, Hermes answers nobody unless you use pairing.")
     allowed = prompt_csv("Allowed user IDs (comma-separated, empty to skip)", "")
     if allowed:
-        save_env_values(ROCKETCHAT_ALLOWED_USERS=allowed)
+        save_env_values(ROCKETCHAT_TEAM_ALLOWED_USERS=allowed)
 
     print()
     print_info("Home channel: the room ID for cron results (empty to skip).")
     home = (prompt("Home channel room ID") or "").strip()
     if home:
-        save_env_values(ROCKETCHAT_HOME_CHANNEL=home)
+        save_env_values(ROCKETCHAT_TEAM_HOME_CHANNEL=home)
 
     print()
     print_warning("Before letting real users in, give this platform an explicit tool list:")
-    print_info("  hermes config set platform_toolsets.rocketchat '[my-mcp-server]'")
+    print_info("  hermes config set platform_toolsets.rocketchat_team '[my-mcp-server]'")
     print_success("Rocket.Chat configured. Run: hermes gateway restart")

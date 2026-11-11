@@ -770,7 +770,7 @@ class TestDdpHandleMessageDispatch(unittest.TestCase):
         # lives on WebhookInboundMixin (the ONE shared classify_inbound call
         # site, see ddp_transport_mixin.py's docstring on that method) - on
         # the real RocketChatAdapter both mixins are always composed together
-        # regardless of ROCKETCHAT_TRANSPORT, so combine them here too rather
+        # regardless of ROCKETCHAT_TEAM_TRANSPORT, so combine them here too rather
         # than testing DdpTransportMixin in a shape it never actually runs in.
         self.CombinedMixin = type(
             "CombinedDdpWebhookMixin",

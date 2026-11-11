@@ -2,7 +2,7 @@
 
 Three layers: the function itself (no Hermes needed); Hermes core's own parser finds no reference in
 neutralised text; and the whole inbound chain, where the trigger, the room context and an inserted
-document reach ``handle_message`` neutralised, and ``ROCKETCHAT_ALLOW_CONTEXT_REFERENCES`` keeps
+document reach ``handle_message`` neutralised, and ``ROCKETCHAT_TEAM_ALLOW_CONTEXT_REFERENCES`` keeps
 only the trigger live.
 """
 
@@ -100,11 +100,11 @@ class TestInboundChain(_Base):
         from config import load_config
 
         env = {
-            "ROCKETCHAT_INBOUND_DEDUP_RETENTION_HOURS": "1000000",
-            "ROCKETCHAT_TIMEZONE": "Europe/Berlin",
+            "ROCKETCHAT_TEAM_INBOUND_DEDUP_RETENTION_HOURS": "1000000",
+            "ROCKETCHAT_TEAM_TIMEZONE": "Europe/Berlin",
         }
         if allow is not None:
-            env["ROCKETCHAT_ALLOW_CONTEXT_REFERENCES"] = allow
+            env["ROCKETCHAT_TEAM_ALLOW_CONTEXT_REFERENCES"] = allow
         self.cfg = load_config({}, env)
         instance = self.instance(_FakeRest(room=[WINDOW[0], self.HIDDEN, WINDOW[1]]))
         media = SimpleNamespace(

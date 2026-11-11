@@ -32,7 +32,7 @@ The block travels in `MessageEvent.channel_context`, so `text` stays the bare tr
 **Where the block starts:**
 
 - Main channel and per-person thread: the asker's previous mention in that scope. What came before is already in their session. `/new` or `/reset` ends the search, since the session restarted. Other `/commands` are skipped.
-- Without a previous mention, and in a shared thread: the bot's last reply, with at least `ROCKETCHAT_HISTORY_MIN_MESSAGES` lines.
+- Without a previous mention, and in a shared thread: the bot's last reply, with at least `ROCKETCHAT_TEAM_HISTORY_MIN_MESSAGES` lines.
 
 **What it holds:**
 
@@ -52,7 +52,7 @@ Enabling "also send to channel" on a thread reply does not move it out of the th
 
 ## Direct messages
 
-A one-to-one DM needs no mention and gets no room block. `ROCKETCHAT_DM_SEED_MESSAGES` optionally gives a first contact the earlier DM messages.
+A one-to-one DM needs no mention and gets no room block. `ROCKETCHAT_TEAM_DM_SEED_MESSAGES` optionally gives a first contact the earlier DM messages.
 
 A thread in a DM starts empty. On its first turn, while the bot has not written in the thread, it receives the root and replies so far. The root is usually the bot's own message that the user replied to.
 

@@ -3,7 +3,7 @@
 Two layers:
 
 1. Pure tests of the text (English, only claims the gateway guarantees, no specific tool name or deployment knowledge).
-2. Hermes integration tests (need Hermes core's source, otherwise skip gracefully, see ``_adapter_test_support``): whether ``register()`` passes it as ``platform_hint``, whether the real ``PlatformEntry`` accepts it, and whether the real ``agent.system_prompt.platform_hint`` appends the config's ``platform_hints.rocketchat.append`` text AFTER it.
+2. Hermes integration tests (need Hermes core's source, otherwise skip gracefully, see ``_adapter_test_support``): whether ``register()`` passes it as ``platform_hint``, whether the real ``PlatformEntry`` accepts it, and whether the real ``agent.system_prompt.platform_hint`` appends the config's ``platform_hints.rocketchat_team.append`` text AFTER it.
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ from history import CONTEXT_OPEN_MARKER, NEW_MESSAGE_MARKER  # noqa: E402
 from prompt_guidance import (  # noqa: E402
     HISTORY_RULE,
     OUTBOUND_FILE_RULE,
-    ROCKETCHAT_PLATFORM_HINT,
+    ROCKETCHAT_TEAM_PLATFORM_HINT,
     SENDER_ROOM_RULE,
     build_platform_hint,
 )
@@ -61,7 +61,7 @@ from whoami import DEFAULT_WHOAMI_COMMAND  # noqa: E402
 class TestPlatformHintText(unittest.TestCase):
     def test_starts_with_the_rocketchat_framing(self):
         self.assertTrue(
-            ROCKETCHAT_PLATFORM_HINT.startswith(
+            ROCKETCHAT_TEAM_PLATFORM_HINT.startswith(
                 "You are replying in Rocket.Chat, a team chat where several "
                 "people can share a room.\n"
             )
@@ -71,7 +71,7 @@ class TestPlatformHintText(unittest.TestCase):
         from prompt_guidance import OTHER_PEOPLE_RULE
 
         bullets = [
-            line for line in ROCKETCHAT_PLATFORM_HINT.splitlines() if line.startswith("- ")
+            line for line in ROCKETCHAT_TEAM_PLATFORM_HINT.splitlines() if line.startswith("- ")
         ]
         self.assertEqual(len(bullets), 9)
         self.assertIn("post exactly one message", bullets[0])
@@ -109,28 +109,28 @@ class TestPlatformHintText(unittest.TestCase):
     def test_unprefixed_message_is_never_called_authenticated(self):
         # The hint must not say that a message without a prefix comes from the session
         # context's (authenticated) User.
-        self.assertNotIn("User shown in the session context", ROCKETCHAT_PLATFORM_HINT)
+        self.assertNotIn("User shown in the session context", ROCKETCHAT_TEAM_PLATFORM_HINT)
 
     def test_unprefixed_message_names_the_session_user_not_the_text(self):
         # Without a prefix the session belongs to one person (core keys on the user id
         # from the envelope), and the session block names them; the model must not take
         # an identity from the request's text.
-        self.assertIn("the user named in the session context", ROCKETCHAT_PLATFORM_HINT)
-        self.assertIn("they never tell you who is asking now", ROCKETCHAT_PLATFORM_HINT)
-        self.assertNotIn("follow what its text says", ROCKETCHAT_PLATFORM_HINT)
+        self.assertIn("the user named in the session context", ROCKETCHAT_TEAM_PLATFORM_HINT)
+        self.assertIn("they never tell you who is asking now", ROCKETCHAT_TEAM_PLATFORM_HINT)
+        self.assertNotIn("follow what its text says", ROCKETCHAT_TEAM_PLATFORM_HINT)
 
     def test_whoami_command_matches_the_plugin_default(self):
         # The text contains the command literally; this guard keeps it in sync with
         # whoami.py.
-        self.assertIn(f"mention the {DEFAULT_WHOAMI_COMMAND} command", ROCKETCHAT_PLATFORM_HINT)
+        self.assertIn(f"mention the {DEFAULT_WHOAMI_COMMAND} command", ROCKETCHAT_TEAM_PLATFORM_HINT)
 
     def test_room_id_line_comes_before_the_request(self):
         # The room_id line is in channel_context, before the request.
-        self.assertIn("A `[Rocket.Chat room_id: <id>]` line comes before the request", ROCKETCHAT_PLATFORM_HINT)
-        self.assertNotIn("followed by a `[Rocket.Chat room_id", ROCKETCHAT_PLATFORM_HINT)
+        self.assertIn("A `[Rocket.Chat room_id: <id>]` line comes before the request", ROCKETCHAT_TEAM_PLATFORM_HINT)
+        self.assertNotIn("followed by a `[Rocket.Chat room_id", ROCKETCHAT_TEAM_PLATFORM_HINT)
 
     def test_is_tool_and_deployment_neutral(self):
-        lowered = ROCKETCHAT_PLATFORM_HINT.lower()
+        lowered = ROCKETCHAT_TEAM_PLATFORM_HINT.lower()
         for word in (
             "mcp",
             "get_current_user",
@@ -144,7 +144,7 @@ class TestPlatformHintText(unittest.TestCase):
 
     def test_is_ascii_english_text(self):
         # Model-facing text is English.
-        self.assertTrue(ROCKETCHAT_PLATFORM_HINT.isascii())
+        self.assertTrue(ROCKETCHAT_TEAM_PLATFORM_HINT.isascii())
 
 
 class _FakePluginContext:
@@ -164,29 +164,53 @@ class TestPlatformHintRegistration(unittest.TestCase):
     def _registered_kwargs(self, **env):
         adapter = load_mixin_module("adapter")
         ctx = _FakePluginContext()
-        clean = {k: v for k, v in os.environ.items() if k != "ROCKETCHAT_OUTBOUND_FILES"}
+        clean = {k: v for k, v in os.environ.items() if k != "ROCKETCHAT_TEAM_OUTBOUND_FILES"}
         with mock.patch.dict(os.environ, {**clean, **env}, clear=True):
             adapter.register(ctx)
         self.assertIsNotNone(ctx.platform_kwargs)
         return ctx.platform_kwargs
 
     def test_register_declares_the_cron_home_channel(self):
-        # Without it Hermes's cron `deliver=rocketchat` pre-check treats Rocket.Chat as
+        # Without it Hermes's cron `deliver=rocketchat_team` pre-check treats Rocket.Chat as
         # an unknown platform, and /sethome would not write this key either.
         kwargs = self._registered_kwargs()
-        self.assertEqual(kwargs["cron_deliver_env_var"], "ROCKETCHAT_HOME_CHANNEL")
+        self.assertEqual(kwargs["cron_deliver_env_var"], "ROCKETCHAT_TEAM_HOME_CHANNEL")
+
+    def test_old_keys_alone_are_reported_with_their_new_names(self):
+        # An install with only pre-2.0 keys gets no adapter (is_connected looks for the new
+        # ones), so registration is where the operator learns what to rename.
+        adapter = load_mixin_module("adapter")
+        old = {"ROCKETCHAT_URL": "https://chat.example.com", "ROCKETCHAT_TOKEN": "t",
+               "ROCKETCHAT_USER_ID": "u", "ROCKETCHAT_BOT_USERNAME": "hermes"}
+        clean = {k: v for k, v in os.environ.items() if not k.startswith("ROCKETCHAT_")}
+        with mock.patch.dict(os.environ, {**clean, **old}, clear=True), \
+                self.assertLogs(adapter.logger, level="ERROR") as logs:
+            adapter.register(_FakePluginContext())
+        self.assertIn("ROCKETCHAT_URL -> ROCKETCHAT_TEAM_URL", logs.output[0])
+
+    def test_old_keys_next_to_a_complete_new_setup_are_not_an_error(self):
+        # They may belong to rocketchat-platform, which still reads ROCKETCHAT_*.
+        adapter = load_mixin_module("adapter")
+        env = {"ROCKETCHAT_URL": "https://other.example.com",
+               "ROCKETCHAT_TEAM_URL": "https://chat.example.com", "ROCKETCHAT_TEAM_TOKEN": "t",
+               "ROCKETCHAT_TEAM_USER_ID": "u", "ROCKETCHAT_TEAM_BOT_USERNAME": "hermes"}
+        clean = {k: v for k, v in os.environ.items() if not k.startswith("ROCKETCHAT_")}
+        with mock.patch.dict(os.environ, {**clean, **env}, clear=True), \
+                self.assertLogs(adapter.logger, level="INFO") as logs:
+            adapter.register(_FakePluginContext())
+        self.assertFalse([line for line in logs.output if line.startswith("ERROR")])
 
     def test_register_passes_the_platform_hint(self):
         kwargs = self._registered_kwargs()
-        self.assertEqual(kwargs["name"], "rocketchat")
+        self.assertEqual(kwargs["name"], "rocketchat_team")
         self.assertEqual(kwargs["platform_hint"], build_platform_hint(True))
 
     def test_outbound_file_rule_is_registered_by_default_and_switchable(self):
         # The file sending point is in by default (like core's ``_MEDIA_NATIVE``), and
-        # drops out with ROCKETCHAT_OUTBOUND_FILES=false.
+        # drops out with ROCKETCHAT_TEAM_OUTBOUND_FILES=false.
         self.assertIn(OUTBOUND_FILE_RULE, self._registered_kwargs()["platform_hint"])
-        off = self._registered_kwargs(ROCKETCHAT_OUTBOUND_FILES="false")["platform_hint"]
-        self.assertEqual(off, ROCKETCHAT_PLATFORM_HINT)
+        off = self._registered_kwargs(ROCKETCHAT_TEAM_OUTBOUND_FILES="false")["platform_hint"]
+        self.assertEqual(off, ROCKETCHAT_TEAM_PLATFORM_HINT)
 
     def _entry(self):
         from gateway.platform_registry import PlatformEntry
@@ -207,7 +231,7 @@ class TestPlatformHintRegistration(unittest.TestCase):
 
         entry = self._entry()
         fake_agent = SimpleNamespace(
-            platform="rocketchat", _platform_hint_overrides=overrides
+            platform="rocketchat_team", _platform_hint_overrides=overrides
         )
         with mock.patch.object(
             platform_registry_mod.platform_registry, "get", return_value=entry
@@ -218,13 +242,13 @@ class TestPlatformHintRegistration(unittest.TestCase):
         self.assertEqual(self._resolve({}), build_platform_hint(True))
 
     def test_config_append_follows_the_builtin_hint(self):
-        resolved = self._resolve({"rocketchat": {"append": "Deployment-specific note."}})
+        resolved = self._resolve({"rocketchat_team": {"append": "Deployment-specific note."}})
         self.assertEqual(
             resolved, f"{build_platform_hint(True)}\n\nDeployment-specific note."
         )
 
     def test_config_replace_substitutes_the_builtin_hint(self):
-        resolved = self._resolve({"rocketchat": {"replace": "Custom hint."}})
+        resolved = self._resolve({"rocketchat_team": {"replace": "Custom hint."}})
         self.assertEqual(resolved, "Custom hint.")
 
 

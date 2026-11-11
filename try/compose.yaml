@@ -34,7 +34,7 @@ services:
     image: docker.io/library/nats:2.11-alpine
 
   rocketchat:
-    image: registry.rocket.chat/rocketchat/rocket.chat:${ROCKETCHAT_TAG:-8.9.1}
+    image: registry.rocket.chat/rocketchat/rocket.chat:${ROCKETCHAT_TEAM_TAG:-8.9.1}
     depends_on:
       mongodb-init: {condition: service_completed_successfully}
       nats: {condition: service_started}

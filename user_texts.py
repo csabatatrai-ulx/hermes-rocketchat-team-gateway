@@ -11,7 +11,7 @@ from __future__ import annotations
 TEXTS = {
     # Cold-start greeting in the home channel (adapter.connect).
     "startup_greeting": "Hi everyone!",
-    # ROCKETCHAT_DM_ONLY: one-time notice on a mention in a room.
+    # ROCKETCHAT_TEAM_DM_ONLY: one-time notice on a mention in a room.
     "dm_only_notice": (
         "ℹ️ _This is a personal bot. It only works in direct messages (DM) and does not answer in this room._"
     ),

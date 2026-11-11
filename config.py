@@ -13,7 +13,7 @@ this worth its own module:
 Precedence is environment → ``extra`` → default, and an EMPTY value counts as
 absent. Env over YAML is Hermes's documented rule for platform settings
 (``gateway/platforms/ADDING_A_PLATFORM.md``: "env > YAML"). The empty rule is
-deliberate: an ``.env`` may hold ``ROCKETCHAT_HOME_CHANNEL=`` (empty) to mean "no
+deliberate: an ``.env`` may hold ``ROCKETCHAT_TEAM_HOME_CHANNEL=`` (empty) to mean "no
 greeting room", and a blank string must not be mistaken for a deliberate choice
 of some other default.
 """
@@ -76,14 +76,33 @@ def _is_set(value: Any) -> bool:
 # Recognised on/off values (case and surrounding space do not matter). Anything in
 # neither set (a typo like "flase") gets the switch's OWN default with a warning, so
 # that a typo can never flip a switch in either direction:
-# ROCKETCHAT_ALLOW_ALL_USERS=off must never mean "on".
+# ROCKETCHAT_TEAM_ALLOW_ALL_USERS=off must never mean "on".
 TRUE_VALUES = frozenset({"true", "1", "yes", "on"})
 FALSE_VALUES = frozenset({"false", "0", "no", "off"})
 
+# The Hermes platform id this plugin registers. Distinct from ``rocketchat``, which the
+# separate ``rocketchat-platform`` catalog plugin registers: only one plugin can own a
+# platform id at runtime. It also names the config sections (``platforms.<id>``,
+# ``platform_toolsets.<id>``, ``platform_hints.<id>``) and the cron ``deliver=<id>`` target.
+PLATFORM_NAME = "rocketchat_team"
+
 # The env var names, paired with the `extra` keys they can be overridden by.
-# The naming convention, applied by ``_pick``: ROCKETCHAT_FOO_BAR <->
+# The naming convention, applied by ``_pick``: ROCKETCHAT_TEAM_FOO_BAR <->
 # extra["foo_bar"].
-_ENV_PREFIX = "ROCKETCHAT_"
+_ENV_PREFIX = "ROCKETCHAT_TEAM_"
+# Before 2.0 the keys were ``ROCKETCHAT_*``, the same names the ``rocketchat-platform``
+# plugin reads. They are no longer read; ``legacy_env_keys`` finds them so the adapter
+# can say which ones to rename.
+_LEGACY_ENV_PREFIX = "ROCKETCHAT_"
+
+
+def legacy_env_keys(env_keys) -> List[Tuple[str, str]]:
+    """``(old, new)`` for each pre-2.0 ``ROCKETCHAT_*`` key in ``env_keys`` (sorted)."""
+    return sorted(
+        (key, _ENV_PREFIX + key[len(_LEGACY_ENV_PREFIX):])
+        for key in env_keys
+        if key.startswith(_LEGACY_ENV_PREFIX) and not key.startswith(_ENV_PREFIX)
+    )
 
 
 def _pick(
@@ -92,7 +111,7 @@ def _pick(
     env: Mapping[str, str],
     default: str = "",
 ) -> str:
-    """First non-empty of ``ROCKETCHAT_<KEY>``, ``extra[key]``, ``default``.
+    """First non-empty of ``ROCKETCHAT_TEAM_<KEY>``, ``extra[key]``, ``default``.
 
         Env over YAML, Hermes's documented rule (see the module docstring).
     """
@@ -127,7 +146,7 @@ def as_bool(raw: str, *, default: bool, name: str = "") -> bool:
 
 
 def _flag(key: str, extra: Mapping[str, Any], env: Mapping[str, str], default: bool) -> bool:
-    """``as_bool(_pick(key, ...))``, with ``ROCKETCHAT_<KEY>`` named in the warning."""
+    """``as_bool(_pick(key, ...))``, with ``ROCKETCHAT_TEAM_<KEY>`` named in the warning."""
     return as_bool(_pick(key, extra, env), default=default, name=_ENV_PREFIX + key.upper())
 
 
@@ -182,13 +201,13 @@ def _normalize_history_limit(raw: str) -> int:
     value = as_int(text, default=-1)
     if value < 0:
         logging.getLogger(__name__).warning(
-            "Rocket.Chat: ROCKETCHAT_HISTORY_LIMIT=%r is not a non-negative integer, "
+            "Rocket.Chat: ROCKETCHAT_TEAM_HISTORY_LIMIT=%r is not a non-negative integer, "
             "using the default (%d)", raw, DEFAULT_HISTORY_LIMIT,
         )
         return DEFAULT_HISTORY_LIMIT
     if value > HISTORY_LIMIT_MAX:
         logging.getLogger(__name__).warning(
-            "Rocket.Chat: ROCKETCHAT_HISTORY_LIMIT=%r is above the maximum, using %d",
+            "Rocket.Chat: ROCKETCHAT_TEAM_HISTORY_LIMIT=%r is above the maximum, using %d",
             raw, HISTORY_LIMIT_MAX,
         )
         return HISTORY_LIMIT_MAX
@@ -201,7 +220,7 @@ def _normalize_history_min_messages(raw: str, limit: int) -> int:
     value = as_int(text, default=-1) if text else DEFAULT_HISTORY_MIN_MESSAGES
     if value < 0:
         logging.getLogger(__name__).warning(
-            "Rocket.Chat: ROCKETCHAT_HISTORY_MIN_MESSAGES=%r is not a non-negative "
+            "Rocket.Chat: ROCKETCHAT_TEAM_HISTORY_MIN_MESSAGES=%r is not a non-negative "
             "integer, using the default (%d)", raw, DEFAULT_HISTORY_MIN_MESSAGES,
         )
         value = DEFAULT_HISTORY_MIN_MESSAGES
@@ -224,7 +243,7 @@ def _normalize_timezone(raw: str) -> Optional[tzinfo]:
         return ZoneInfo(text)
     except Exception:  # noqa: BLE001 - ZoneInfoNotFoundError, ValueError, OSError
         logging.getLogger(__name__).warning(
-            "Rocket.Chat: ROCKETCHAT_TIMEZONE=%r is not a valid IANA time zone, "
+            "Rocket.Chat: ROCKETCHAT_TEAM_TIMEZONE=%r is not a valid IANA time zone, "
             "using the local time zone", raw,
         )
         return None
@@ -242,13 +261,13 @@ def _normalize_dm_seed_messages(raw: str) -> int:
     value = as_int(text, default=-1)
     if value < 0:
         logging.getLogger(__name__).warning(
-            "Rocket.Chat: ROCKETCHAT_DM_SEED_MESSAGES=%r is not a non-negative integer, "
+            "Rocket.Chat: ROCKETCHAT_TEAM_DM_SEED_MESSAGES=%r is not a non-negative integer, "
             "using the default (%d)", raw, DEFAULT_DM_SEED_MESSAGES,
         )
         return DEFAULT_DM_SEED_MESSAGES
     if value > HISTORY_LIMIT_MAX:
         logging.getLogger(__name__).warning(
-            "Rocket.Chat: ROCKETCHAT_DM_SEED_MESSAGES=%r is above the maximum, using %d",
+            "Rocket.Chat: ROCKETCHAT_TEAM_DM_SEED_MESSAGES=%r is above the maximum, using %d",
             raw, HISTORY_LIMIT_MAX,
         )
         return HISTORY_LIMIT_MAX
@@ -263,7 +282,7 @@ def _normalize_transport(raw: str) -> str:
     value = (raw or "ddp").strip().lower()
     if value not in _VALID_TRANSPORTS:
         logging.getLogger(__name__).warning(
-            "Rocket.Chat: ROCKETCHAT_TRANSPORT=%r not in %s, falling back to "
+            "Rocket.Chat: ROCKETCHAT_TEAM_TRANSPORT=%r not in %s, falling back to "
             "'ddp'", raw, _VALID_TRANSPORTS,
         )
         return "ddp"
@@ -358,19 +377,22 @@ def _positive_float(key: str, raw: str, default: float) -> float:
 _DEDUP_STATE_DIR_OFF_VALUES = ("none", "off", "false", "0", "disabled")
 
 
-def _resolve_hermes_state_dir(env: Mapping[str, str]) -> str:
-    """The gateway's own state root (``HERMES_HOME``, default ``~/.hermes``).
+def _resolve_hermes_state_dir(env: Mapping[str, str], hermes_home: str = "") -> str:
+    """The gateway's own state root: ``hermes_home``, else ``HERMES_HOME``, else ``~/.hermes``.
 
-    Each Hermes PROFILE sets its own ``HERMES_HOME`` (``~/.hermes/profiles/<name>``),
-    so reading it here (rather than hardcoding ``~/.hermes``) keeps the persisted
-    dedup state inside the profile that owns it: two profiles never share or clobber
-    one file.
+    The adapter passes Hermes's own answer (``hermes_constants.get_hermes_home()``), which
+    resolves the active PROFILE (``~/.hermes/profiles/<name>``) even under a multiplexed
+    gateway, so the persisted dedup state stays inside the profile that owns it: two
+    profiles never share or clobber one file. The env fallback serves callers without
+    Hermes (this module stays Hermes-agnostic).
     """
+    if str(hermes_home or "").strip():
+        return os.path.expanduser(str(hermes_home).strip())
     home = str(env.get("HERMES_HOME") or "").strip()
     return os.path.expanduser(home) if home else os.path.expanduser("~/.hermes")
 
 
-def _resolve_dedup_state_dir(raw: str, env: Mapping[str, str]) -> str:
+def _resolve_dedup_state_dir(raw: str, env: Mapping[str, str], hermes_home: str = "") -> str:
     """The restart-surviving dedup persistence directory, or ``""`` (disabled).
 
     Unlike every other setting in this module, an UNSET/EMPTY value here does NOT
@@ -383,7 +405,7 @@ def _resolve_dedup_state_dir(raw: str, env: Mapping[str, str]) -> str:
     if value.lower() in _DEDUP_STATE_DIR_OFF_VALUES:
         return ""
     return os.path.expanduser(value) if value else os.path.join(
-        _resolve_hermes_state_dir(env), DEFAULT_DEDUP_STATE_DIR_NAME
+        _resolve_hermes_state_dir(env, hermes_home), DEFAULT_DEDUP_STATE_DIR_NAME
     )
 
 
@@ -401,14 +423,14 @@ class RocketChatConfig:
     user_id: str = ""
     bot_username: str = ""
     # The Hermes "home channel" (room id): target of the startup greeting (when
-    # ``startup_greeting``) and of ``deliver=rocketchat`` cron jobs
+    # ``startup_greeting``) and of ``deliver=rocketchat_team`` cron jobs
     # (``cron_deliver_env_var``). Hermes's ``/sethome`` writes this key.
     home_channel: str = ""
-    # ROCKETCHAT_STARTUP_GREETING: separate switch so the home channel can be a cron
+    # ROCKETCHAT_TEAM_STARTUP_GREETING: separate switch so the home channel can be a cron
     # target without a greeting (an owner's DM on a personal bot).
     startup_greeting: bool = True
 
-    # ROCKETCHAT_ASKER_KEY: the asker attestation's key, shared with a Rocket.Chat
+    # ROCKETCHAT_TEAM_ASKER_KEY: the asker attestation's key, shared with a Rocket.Chat
     # history MCP server (asker.py). Empty = no attestation line in the context.
     asker_key: str = ""
 
@@ -417,12 +439,12 @@ class RocketChatConfig:
     webhook_host: str = DEFAULT_WEBHOOK_HOST
     webhook_port: int = DEFAULT_WEBHOOK_PORT
     require_mention: bool = True
-    # ROCKETCHAT_DM_ONLY: work only in 1:1 DMs. A mention in a room (or group DM) starts
+    # ROCKETCHAT_TEAM_DM_ONLY: work only in 1:1 DMs. A mention in a room (or group DM) starts
     # no turn and loads no room context; the bot says once per room that it is DM-only.
     # For a personal Hermes running with its owner's full rights, where anyone's message
     # in a shared room would run the owner's agent.
     dm_only: bool = False
-    # ROCKETCHAT_ALLOW_CONTEXT_REFERENCES: let Hermes expand ``@file:``, ``@url:`` and the other
+    # ROCKETCHAT_TEAM_ALLOW_CONTEXT_REFERENCES: let Hermes expand ``@file:``, ``@url:`` and the other
     # ``@`` context references in the asker's own message. Off by default: in a shared room it
     # would let anyone who can reach the bot attach files from its workspace (context_refs.py).
     allow_context_references: bool = False
@@ -430,19 +452,19 @@ class RocketChatConfig:
     # Neither goes on an answer in a 1:1 DM.
     reply_quote: bool = True
     reply_mention: bool = True
-    # ROCKETCHAT_OUTBOUND_FILES: the plugin uploads a file the model sends with a
+    # ROCKETCHAT_TEAM_OUTBOUND_FILES: the plugin uploads a file the model sends with a
     # ``MEDIA:/path`` tag into the room (Hermes's documented
     # ``send_document``/``send_image_file``/``send_voice``/``send_video`` overrides, see
     # adapter.py). When off, Hermes's default stays (core's "cannot send this" notice)
     # and the platform guidance does not offer the tag.
     outbound_files: bool = True
-    # ROCKETCHAT_APPROVAL_BUTTONS: accept and deny buttons on a dangerous-command prompt
+    # ROCKETCHAT_TEAM_APPROVAL_BUTTONS: accept and deny buttons on a dangerous-command prompt
     # (approval_buttons.py). When off, Hermes sends its plain-text /approve prompt.
     approval_buttons: bool = True
     # A startup warning when Hermes's built-in memory is on although several people can reach the bot
     # (shared_memory_risk). Only a log line; it changes nothing.
     shared_memory_warning: bool = True
-    # ROCKETCHAT_TRANSPORT (see ddp_transport_mixin.py): "ddp" (default: inbound only
+    # ROCKETCHAT_TEAM_TRANSPORT (see ddp_transport_mixin.py): "ddp" (default: inbound only
     # through the Realtime API, the webhook HTTP server does not start) or "webhook"
     # (Outgoing Webhook HTTP listener, the fallback path). Either-or: the two cannot run
     # together, that would process messages twice. An invalid value falls back to "ddp"
@@ -460,7 +482,7 @@ class RocketChatConfig:
 
     allowed_users: List[str] = field(default_factory=list)
     allow_all_users: bool = False
-    # ROCKETCHAT_IGNORE_SENDERS: usernames or user ids whose messages never start a turn
+    # ROCKETCHAT_TEAM_IGNORE_SENDERS: usernames or user ids whose messages never start a turn
     # (rooms and DMs), typically the other bots, against bot-to-bot reply loops. Runs
     # before the allowlist and the dedup (see inbound.py ``is_ignored_sender``).
     ignore_senders: List[str] = field(default_factory=list)
@@ -484,7 +506,7 @@ class RocketChatConfig:
     history_token_budget: int = DEFAULT_HISTORY_TOKEN_BUDGET
 
     # Sessions belong to Hermes core (room_session.py, dm_session.py). Time zone of the
-    # block's timestamps (ROCKETCHAT_TIMEZONE, IANA name); None = the process's local
+    # block's timestamps (ROCKETCHAT_TEAM_TIMEZONE, IANA name); None = the process's local
     # zone.
     timezone: Optional[tzinfo] = None
 
@@ -552,12 +574,13 @@ def load_config(
     env: Optional[Mapping[str, str]] = None,
     *,
     token: str = "",
+    hermes_home: str = "",
 ) -> RocketChatConfig:
     """Build a :class:`RocketChatConfig` from ``extra`` + ``env``.
 
     ``token`` is passed separately because the harness carries it on the
     platform config object itself (``config.token``) rather than in ``extra``;
-    it still falls back to ``ROCKETCHAT_TOKEN``.
+    it still falls back to ``ROCKETCHAT_TEAM_TOKEN``.
     """
     extra = extra or {}
     env = env if env is not None else os.environ
@@ -565,7 +588,7 @@ def load_config(
 
     return RocketChatConfig(
         base_url=_pick("url", extra, env).rstrip("/"),
-        # Env over YAML: PlatformConfig.token (``platforms.rocketchat.token``) is the
+        # Env over YAML: PlatformConfig.token (``platforms.rocketchat_team.token``) is the
         # YAML level, after the env key and ``extra``.
         token=_pick("token", extra, env) or token,
         user_id=_pick("user_id", extra, env),
@@ -614,13 +637,13 @@ def load_config(
         allow_context_references=_flag("allow_context_references", extra, env, False),
         reply_quote=_flag("reply_quote", extra, env, True),
         reply_mention=_flag("reply_mention", extra, env, True),
-        # Env only (like ROCKETCHAT_ALLOW_BUILTIN_*): the platform guidance is fixed at
+        # Env only (like ROCKETCHAT_TEAM_ALLOW_BUILTIN_*): the platform guidance is fixed at
         # registration, when the ``config.yaml`` ``extra`` is not readable yet, so both
         # always see the same value.
         approval_buttons=_flag("approval_buttons", extra, env, True),
         shared_memory_warning=_flag("shared_memory_warning", extra, env, True),
         outbound_files=as_bool(
-            env.get("ROCKETCHAT_OUTBOUND_FILES", ""), default=True, name="ROCKETCHAT_OUTBOUND_FILES"
+            env.get("ROCKETCHAT_TEAM_OUTBOUND_FILES", ""), default=True, name="ROCKETCHAT_TEAM_OUTBOUND_FILES"
         ),
         startup_greeting=_flag("startup_greeting", extra, env, True),
         ignore_senders=as_list(_pick("ignore_senders", extra, env)),
@@ -658,7 +681,7 @@ def load_config(
             _pick("inbound_dedup_retention_hours", extra, env),
             DEFAULT_INBOUND_DEDUP_RETENTION_HOURS,
         ),
-        dedup_state_dir=_resolve_dedup_state_dir(_pick("dedup_state_dir", extra, env), env),
+        dedup_state_dir=_resolve_dedup_state_dir(_pick("dedup_state_dir", extra, env), env, hermes_home),
         always_fresh_final_streaming=_flag("always_fresh_final_streaming", extra, env, False),
     )
 

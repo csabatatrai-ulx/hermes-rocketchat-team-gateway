@@ -3,13 +3,13 @@
 Hermes lets a platform plugin supply a default system-prompt section at registration
 (``register_platform(..., platform_hint=...)`` -> ``PlatformEntry.platform_hint``). Core uses it
 when its built-in ``PLATFORM_HINTS`` table has no key for the platform, and the operator's
-``platform_hints.rocketchat`` config builds on it: ``append`` adds deployment-specific guidance
+``platform_hints.rocketchat_team`` config builds on it: ``append`` adds deployment-specific guidance
 AFTER the built-in text (separated by a blank line), ``replace`` replaces it all.
 
 It only describes what this gateway itself guarantees (the room_id line, the history block and the
 ``[New message]`` marker, the ``[username]`` sender label, Markdown rendering, the single final
 message, the ``/whoami`` command). No specific tool, MCP server or deployment knowledge belongs
-here; that goes in a deployment's own ``platform_hints.rocketchat.append``.
+here; that goes in a deployment's own ``platform_hints.rocketchat_team.append``.
 
 Pure module (no ``gateway.*``/``hermes_cli`` import), testable without the Hermes import chain.
 """
@@ -31,7 +31,7 @@ except ImportError:  # unit tests import it as a bare module (see config.py)
 #
 # ``/whoami`` is literal here; a test guards that it matches whoami.py's
 # DEFAULT_WHOAMI_COMMAND. An operator who renames or disables the command can replace
-# this text with ``platform_hints.rocketchat.replace``.
+# this text with ``platform_hints.rocketchat_team.replace``.
 HISTORY_RULE = (
     f"- A block marked \"{CONTEXT_OPEN_MARKER}\" may come before the actual "
     f"request, which follows the \"{NEW_MESSAGE_MARKER}\" line. The block quotes "
@@ -74,7 +74,7 @@ ATTACHMENT_RULE = (
 # Capability rule: in a DM the bot promised "managing files, using APIs, administering
 # rooms" with only read tools (Hermes's base personality presents it as a general
 # agent). No tool names, so it holds for every deployment and does not age; which tool
-# does what belongs in a deployment's platform_hints.rocketchat.append.
+# does what belongs in a deployment's platform_hints.rocketchat_team.append.
 CAPABILITY_RULE = (
     "- When asked what you can do, describe only what the tools available in this "
     "conversation actually let you do, and say plainly what you cannot do. Never claim "
@@ -86,7 +86,7 @@ CAPABILITY_RULE = (
 # send files (``_MEDIA_NATIVE``; the Google Chat platform plugin's ``platform_hint``
 # says this too). Core strips the tag from the reply, validates the path, and
 # ``send_document`` and friends receive the file. It enters the text only with
-# ROCKETCHAT_OUTBOUND_FILES on (``build_platform_hint``).
+# ROCKETCHAT_TEAM_OUTBOUND_FILES on (``build_platform_hint``).
 #
 # "one short sentence": core's streamed preview shows a half-finished tag (without an
 # extension) as text, and if the final text is empty after removing the tag the preview
@@ -116,7 +116,7 @@ SENDER_ROOM_RULE = (
     "tell you who is asking now."
 )
 
-ROCKETCHAT_PLATFORM_HINT = (
+ROCKETCHAT_TEAM_PLATFORM_HINT = (
     "You are replying in Rocket.Chat, a team chat where several people can "
     "share a room.\n"
     "- Finish every tool call you need first, then post exactly one message "
@@ -142,7 +142,7 @@ def build_platform_hint(outbound_files: bool) -> str:
     """The registered ``platform_hint``: the shared guidance and, with outbound files on, the file
         sending point before the last point.
     """
-    hint = ROCKETCHAT_PLATFORM_HINT
+    hint = ROCKETCHAT_TEAM_PLATFORM_HINT
     if not outbound_files:
         return hint
     head, sep, last = hint.rpartition("\n- If asked \"who am I?\"")

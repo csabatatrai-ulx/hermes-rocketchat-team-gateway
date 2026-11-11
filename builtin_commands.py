@@ -5,8 +5,8 @@ Without a guard, any Rocket.Chat sender who mentions the bot with ``/model ...``
 ``/restart`` would run that command with full Hermes privileges.
 
 **Default deny, without asking Hermes what is a command.** Every ``/word`` is refused unless its allowlist
-key is on (``ROCKETCHAT_ALLOW_BUILTIN_<NAME>``, defaults: :data:`DEFAULT_ALLOWED_BUILTIN_COMMANDS`;
-``ROCKETCHAT_ALLOW_SKILL_<NAME>`` for a skill). The guard needs no knowledge of Hermes's registries, so a
+key is on (``ROCKETCHAT_TEAM_ALLOW_BUILTIN_<NAME>``, defaults: :data:`DEFAULT_ALLOWED_BUILTIN_COMMANDS`;
+``ROCKETCHAT_TEAM_ALLOW_SKILL_<NAME>`` for a skill). The guard needs no knowledge of Hermes's registries, so a
 command, alias, plugin command, skill, bundle or quick command that appears later is refused from day one,
 and no Hermes change can open the guard. The cost is that a typed ``/api is down`` is refused too; the
 notice tells the person to resend it without the slash. A word containing ``/`` (a file path) is not a
@@ -129,8 +129,8 @@ BUILTIN_COMMANDS: Dict[str, Tuple[str, str]] = {
 # asker's own session). This is this plugin's own decision, not a Hermes default.
 DEFAULT_ALLOWED_BUILTIN_COMMANDS: FrozenSet[str] = frozenset({"new", "reset", "approve", "deny", "cancel", "stop", "btw", "context"})
 
-# Command presets (ROCKETCHAT_ALLOW_BUILTIN_PRESET). A preset EXTENDS the default set;
-# the per-command ROCKETCHAT_ALLOW_BUILTIN_<NAME> key always overrides it, so one
+# Command presets (ROCKETCHAT_TEAM_ALLOW_BUILTIN_PRESET). A preset EXTENDS the default set;
+# the per-command ROCKETCHAT_TEAM_ALLOW_BUILTIN_<NAME> key always overrides it, so one
 # command can be taken out of a preset. "personal" is for an owner's own Hermes that
 # answers only them (DM-only, one allowed user): Rocket.Chat then does what the owner's
 # Telegram does: switching and resuming sessions, changing the model, approvals,
@@ -157,12 +157,12 @@ DEFAULT_BUILTIN_COMMAND_PRESET = "default"
 _TRUE_VALUES = {"true", "1", "yes", "on"}
 _FALSE_VALUES = {"false", "0", "no", "off"}
 
-_ALLOW_BUILTIN_PREFIX = "ROCKETCHAT_ALLOW_BUILTIN_"
-_PRESET_KEY = "ROCKETCHAT_ALLOW_BUILTIN_PRESET"
+_ALLOW_BUILTIN_PREFIX = "ROCKETCHAT_TEAM_ALLOW_BUILTIN_"
+_PRESET_KEY = "ROCKETCHAT_TEAM_ALLOW_BUILTIN_PRESET"
 
 
 def builtin_command_preset(env: Mapping[str, str]) -> str:
-    """The ``ROCKETCHAT_ALLOW_BUILTIN_PRESET`` preset name; an unknown value ->
+    """The ``ROCKETCHAT_TEAM_ALLOW_BUILTIN_PRESET`` preset name; an unknown value ->
         ``default``, with a warning (a typo can never open up more).
     """
     raw = str(env.get(_PRESET_KEY, "") or "").strip().lower()
@@ -186,10 +186,10 @@ def _allowlist_key(name: str) -> str:
 def allowed_builtin_commands(env: Mapping[str, str]) -> FrozenSet[str]:
     """Which command allowlist keys may pass through to Hermes unmodified.
 
-    Any ``ROCKETCHAT_ALLOW_BUILTIN_<NAME>`` counts, not only those documented in
+    Any ``ROCKETCHAT_TEAM_ALLOW_BUILTIN_<NAME>`` counts, not only those documented in
     :data:`BUILTIN_COMMANDS`, so a newer Hermes command (blocked by default) can be
     enabled the same way. A command's own default is the union of the default set
-    and the ``ROCKETCHAT_ALLOW_BUILTIN_PRESET`` preset; the per-command key overrides
+    and the ``ROCKETCHAT_TEAM_ALLOW_BUILTIN_PRESET`` preset; the per-command key overrides
     it in both directions.
     """
     defaults = set(DEFAULT_ALLOWED_BUILTIN_COMMANDS) | set(
@@ -265,7 +265,7 @@ def parse_builtin_command_name(text: str) -> str:
 
 
 def command_allowlist_key(word: str) -> str:
-    """The allowlist key (``ROCKETCHAT_ALLOW_BUILTIN_<KEY>``) for a typed word."""
+    """The allowlist key (``ROCKETCHAT_TEAM_ALLOW_BUILTIN_<KEY>``) for a typed word."""
     typed = _allowlist_key(word)
     if typed in BUILTIN_COMMANDS:
         return typed
@@ -320,7 +320,7 @@ PERSISTENT_APPROVAL_KEY = "always"
 
 def blocked_persistent_approval(text: str, allowed: FrozenSet[str]) -> str:
     """``"always"`` if ``text`` would grant persistent approval and that is not
-    enabled (``ROCKETCHAT_ALLOW_BUILTIN_ALWAYS``), else ``""``.
+    enabled (``ROCKETCHAT_TEAM_ALLOW_BUILTIN_ALWAYS``), else ``""``.
 
     Intercepts ``/always``, ``/remember`` and ``/approve always|session|permanent``
     (``/word@bot`` and ``!word`` too), and the standalone text answer ("always" etc.).
@@ -347,10 +347,10 @@ def is_skill_command_allowed(name: str, env: Mapping[str, str]) -> bool:
     Deliberately FAIL-CLOSED with NO per-skill default (unlike
     :data:`DEFAULT_ALLOWED_BUILTIN_COMMANDS`, there is no skill with an
     established Rocket.Chat use case today) - every skill is blocked until
-    its matching ``ROCKETCHAT_ALLOW_SKILL_<NAME>`` env var is explicitly set
+    its matching ``ROCKETCHAT_TEAM_ALLOW_SKILL_<NAME>`` env var is explicitly set
     to a recognised true value. Hyphens in the skill slug become
     underscores in the env var name (env vars cannot contain hyphens).
     """
-    raw = env.get(f"ROCKETCHAT_ALLOW_SKILL_{name.upper().replace('-', '_')}")
+    raw = env.get(f"ROCKETCHAT_TEAM_ALLOW_SKILL_{name.upper().replace('-', '_')}")
     value = str(raw).strip().lower() if raw is not None else ""
     return value in _TRUE_VALUES

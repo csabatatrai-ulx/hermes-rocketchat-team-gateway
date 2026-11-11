@@ -94,9 +94,9 @@ class SetupWizardTests(unittest.TestCase):
         self.answers = ["https://chat.example/", "u1", "tok", "a1,b1", "R1"]
         self._run({"username": "hermes", "roles": ["user", "bot"]})
         self.assertEqual(self.saved, {
-            "ROCKETCHAT_URL": "https://chat.example", "ROCKETCHAT_USER_ID": "u1",
-            "ROCKETCHAT_TOKEN": "tok", "ROCKETCHAT_BOT_USERNAME": "hermes",
-            "ROCKETCHAT_ALLOWED_USERS": "a1,b1", "ROCKETCHAT_HOME_CHANNEL": "R1",
+            "ROCKETCHAT_TEAM_URL": "https://chat.example", "ROCKETCHAT_TEAM_USER_ID": "u1",
+            "ROCKETCHAT_TEAM_TOKEN": "tok", "ROCKETCHAT_TEAM_BOT_USERNAME": "hermes",
+            "ROCKETCHAT_TEAM_ALLOWED_USERS": "a1,b1", "ROCKETCHAT_TEAM_HOME_CHANNEL": "R1",
         })
 
     def test_refused_credentials_are_not_saved_by_default(self):

@@ -9,10 +9,10 @@ Rocket.Chat authorises every API call as the bot, not as the person who asked. T
 | Anyone runs privileged Hermes commands | [Default-deny command guard](commands.md) |
 | One member changes approvals for everyone | Persistent approval refused |
 | Bot pulled into a channel by a mention | Only rooms it is a member of |
-| Bots answering each other forever | `ROCKETCHAT_IGNORE_SENDERS`; own messages filtered |
+| Bots answering each other forever | `ROCKETCHAT_TEAM_IGNORE_SENDERS`; own messages filtered |
 | A prefix match wakes the wrong bot | Bounded mention match (`@hermes` does not match `@hermes-beta`) |
 | Forged markers in a message | Continuation lines indented; column 0 is the gateway's |
-| A member attaches files from the bot's workspace with `@file:` or makes it fetch a URL with `@url:` | [`@` references kept inert](#context-references); `ROCKETCHAT_ALLOW_CONTEXT_REFERENCES=true` turns it off |
+| A member attaches files from the bot's workspace with `@file:` or makes it fetch a URL with `@url:` | [`@` references kept inert](#context-references); `ROCKETCHAT_TEAM_ALLOW_CONTEXT_REFERENCES=true` turns it off |
 | Old message re-triggers after a reaction | Time-based dedup and age limit |
 | Unauthenticated webhook | Refuses to start without a secret; constant-time compare; loopback by default |
 | Token sent elsewhere | Redirects not followed |
@@ -22,10 +22,10 @@ Rocket.Chat authorises every API call as the bot, not as the person who asked. T
 
 The adapter cannot set Hermes's configuration. These are yours:
 
-- **Tools.** Without `platform_toolsets.rocketchat`, Hermes gives the platform its whole core toolset. Always set an explicit list on a shared bot.
+- **Tools.** Without `platform_toolsets.rocketchat_team`, Hermes gives the platform its whole core toolset. Always set an explicit list on a shared bot.
 - **Approvals.** Hermes's default `approvals.mode: smart` lets a helper model approve flagged commands without asking anyone. Use `manual` on a shared bot.
 - **What counts as dangerous.** Hermes decides which commands need an approval, from a list of patterns. The list does not cover every deletion: in Hermes 0.23.0, `rm` of an absolute path, a recursive `rm`, `find -delete` and `xargs rm` ask, but a plain `rm` of a relative path or glob (`cd /srv/app && rm logs/*`) does not (reported upstream as [#151542](https://github.com/NousResearch/hermes-agent/issues/151542)). Treat approvals as a safety net, not a sandbox: on a shared bot, give it only the tools it needs, and run its terminal in a container or a dedicated account that can only reach what the bot may change.
-- **Memory.** Hermes keeps one memory per Hermes home, and it is on by default, so on a shared bot what one person tells it can surface in another person's answer. Turn off `memory.memory_enabled` and `memory.user_profile_enabled` for a shared bot. The adapter logs a warning at startup when they are on and more than one person can reach the bot (`ROCKETCHAT_SHARED_MEMORY_WARNING=false` silences it).
+- **Memory.** Hermes keeps one memory per Hermes home, and it is on by default, so on a shared bot what one person tells it can surface in another person's answer. Turn off `memory.memory_enabled` and `memory.user_profile_enabled` for a shared bot. The adapter logs a warning at startup when they are on and more than one person can reach the bot (`ROCKETCHAT_TEAM_SHARED_MEMORY_WARNING=false` silences it).
 - **Prompt injection.** Room context is marked as context, but it is still text a model reads. Give the bot only the tools its users may trigger, and keep approvals on for consequential ones.
 
 Use a dedicated bot account with minimal room memberships, never an administrator token.
@@ -40,13 +40,13 @@ Hermes also expands references inside the room context block. A reference hidden
 
 Verified live on Hermes 0.23.0: without this, a room member's `@file:` attached the bot's `config.yaml` and listed its `memories/` folder ([evidence](evidence.md#context-references)).
 
-**How to turn it off.** Set `ROCKETCHAT_ALLOW_CONTEXT_REFERENCES=true` in `~/.hermes/.env` and restart the gateway. References in the asker's own message are then expanded as Hermes does by default. The room context and inserted documents stay inert either way, because neither is the asker's request. The adapter logs a warning at startup while the switch is on. Turn it on only for a bot that just you, or people who may read its workspace, can reach.
+**How to turn it off.** Set `ROCKETCHAT_TEAM_ALLOW_CONTEXT_REFERENCES=true` in `~/.hermes/.env` and restart the gateway. References in the asker's own message are then expanded as Hermes does by default. The room context and inserted documents stay inert either way, because neither is the asker's request. The adapter logs a warning at startup while the switch is on. Turn it on only for a bot that just you, or people who may read its workspace, can reach.
 
 ## Asker token
 
 A history MCP server does not know who is asking, and the model supplies the room. A room member, or text injected into a message, could ask about a private room the bot belongs to and the person does not. The gateway knows who addressed the bot and where.
 
-With `ROCKETCHAT_ASKER_KEY` set, each turn carries this line after the room ID:
+With `ROCKETCHAT_TEAM_ASKER_KEY` set, each turn carries this line after the room ID:
 
 ```text
 [Rocket.Chat asker: v1.<user id>.<room id>.<expiry>.<signature>]

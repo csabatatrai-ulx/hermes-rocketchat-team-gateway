@@ -45,7 +45,7 @@ def approval_attachments(
     """Attachments carrying one button per offered choice, two per row, or ``[]`` when none is allowed.
 
     ``actions`` are Hermes's ``(label, choice, style)`` rows. A choice the command guard would refuse gets no
-    button, so persistent approval is not offered unless ``ROCKETCHAT_ALLOW_BUILTIN_ALWAYS`` is on. The mention
+    button, so persistent approval is not offered unless ``ROCKETCHAT_TEAM_ALLOW_BUILTIN_ALWAYS`` is on. The mention
     keeps the click away from the client's own slash-command handling and makes it work in rooms and DMs alike.
     """
     buttons = []
@@ -68,7 +68,7 @@ def confirm_attachments(bot_username: str, allowed_commands: FrozenSet[str]) -> 
     """The buttons of a slash-command confirmation (``/new``): the same rule, only allowed answers get one.
 
     "Always" would switch the confirmation off for everyone on the gateway, so it needs
-    ``ROCKETCHAT_ALLOW_BUILTIN_ALWAYS``. Cancel sends ``/deny``, which Hermes also takes as cancel here, because
+    ``ROCKETCHAT_TEAM_ALLOW_BUILTIN_ALWAYS``. Cancel sends ``/deny``, which Hermes also takes as cancel here, because
     someone else's click then gets "nothing pending" rather than "unknown command".
     """
     buttons = [

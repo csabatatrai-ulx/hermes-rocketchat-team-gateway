@@ -208,7 +208,7 @@ class TestIsSenderAllowed(unittest.TestCase):
 
 
 class TestClassifyInboundDmOnly(unittest.TestCase):
-    """ROCKETCHAT_DM_ONLY: never a turn in a room."""
+    """ROCKETCHAT_TEAM_DM_ONLY: never a turn in a room."""
 
     def classify(self, raw=None, **kwargs):
         kwargs.setdefault("bot_username", BOT)

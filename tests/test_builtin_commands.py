@@ -58,7 +58,7 @@ class TestParseBuiltinCommandName(unittest.TestCase):
 
 
 class TestBuiltinCommandPresets(unittest.TestCase):
-    """ROCKETCHAT_ALLOW_BUILTIN_PRESET: the preset of a personal Hermes."""
+    """ROCKETCHAT_TEAM_ALLOW_BUILTIN_PRESET: the preset of a personal Hermes."""
 
     def test_deny_is_allowed_by_default(self):
         # The pair of /approve: without it a pending dangerous command could only be
@@ -66,7 +66,7 @@ class TestBuiltinCommandPresets(unittest.TestCase):
         self.assertIn("deny", allowed_builtin_commands({}))
 
     def test_personal_preset_opens_the_session_commands(self):
-        allowed = allowed_builtin_commands({"ROCKETCHAT_ALLOW_BUILTIN_PRESET": "personal"})
+        allowed = allowed_builtin_commands({"ROCKETCHAT_TEAM_ALLOW_BUILTIN_PRESET": "personal"})
         for name in ("sessions", "resume", "title", "branch", "model", "sethome", "status"):
             self.assertIn(name, allowed)
         self.assertTrue(DEFAULT_ALLOWED_BUILTIN_COMMANDS <= allowed)
@@ -74,13 +74,13 @@ class TestBuiltinCommandPresets(unittest.TestCase):
     def test_btw_and_context_are_allowed_by_default(self):
         # /btw does not write to the session, /context only reads, and both touch only
         # the asker's own session, so they are on by default on a shared bot too.
-        for env in ({}, {"ROCKETCHAT_ALLOW_BUILTIN_PRESET": "personal"}):
+        for env in ({}, {"ROCKETCHAT_TEAM_ALLOW_BUILTIN_PRESET": "personal"}):
             allowed = allowed_builtin_commands(env)
             for name in ("btw", "context"):
                 self.assertIn(name, allowed)
 
     def test_personal_preset_opens_the_terminal_like_commands_but_default_does_not(self):
-        personal = allowed_builtin_commands({"ROCKETCHAT_ALLOW_BUILTIN_PRESET": "personal"})
+        personal = allowed_builtin_commands({"ROCKETCHAT_TEAM_ALLOW_BUILTIN_PRESET": "personal"})
         default = allowed_builtin_commands({})
         for name in ("steer", "agents", "goal", "subgoal", "personality", "reasoning", "footer", "profile",
                      "insights", "discard", "heartbeat", "loop", "plan", "review", "refine", "bg"):
@@ -88,31 +88,31 @@ class TestBuiltinCommandPresets(unittest.TestCase):
             self.assertNotIn(name, default)
 
     def test_personal_preset_keeps_the_meaningless_in_a_pod_commands_closed(self):
-        allowed = allowed_builtin_commands({"ROCKETCHAT_ALLOW_BUILTIN_PRESET": "personal"})
+        allowed = allowed_builtin_commands({"ROCKETCHAT_TEAM_ALLOW_BUILTIN_PRESET": "personal"})
         for name in ("diff", "init", "rollback", "egress", "codex_runtime", "login", "topup", "fast", "update"):
             self.assertNotIn(name, allowed)
 
     def test_personal_preset_never_opens_the_most_dangerous_commands(self):
-        allowed = allowed_builtin_commands({"ROCKETCHAT_ALLOW_BUILTIN_PRESET": "personal"})
+        allowed = allowed_builtin_commands({"ROCKETCHAT_TEAM_ALLOW_BUILTIN_PRESET": "personal"})
         for name in ("yolo", "restart", "update", "platform", "debug", "learn", "approvals", "pause"):
             self.assertNotIn(name, allowed)
 
     def test_per_command_key_overrides_the_preset_both_ways(self):
         allowed = allowed_builtin_commands({
-            "ROCKETCHAT_ALLOW_BUILTIN_PRESET": "personal",
-            "ROCKETCHAT_ALLOW_BUILTIN_MODEL": "false",
-            "ROCKETCHAT_ALLOW_BUILTIN_YOLO": "true",
+            "ROCKETCHAT_TEAM_ALLOW_BUILTIN_PRESET": "personal",
+            "ROCKETCHAT_TEAM_ALLOW_BUILTIN_MODEL": "false",
+            "ROCKETCHAT_TEAM_ALLOW_BUILTIN_YOLO": "true",
         })
         self.assertNotIn("model", allowed)
         self.assertIn("yolo", allowed)
 
     def test_unknown_preset_falls_back_to_default_with_a_warning(self):
         with self.assertLogs("builtin_commands", level="WARNING"):
-            allowed = allowed_builtin_commands({"ROCKETCHAT_ALLOW_BUILTIN_PRESET": "everything"})
+            allowed = allowed_builtin_commands({"ROCKETCHAT_TEAM_ALLOW_BUILTIN_PRESET": "everything"})
         self.assertEqual(allowed, DEFAULT_ALLOWED_BUILTIN_COMMANDS)
 
     def test_preset_key_is_not_a_command_named_preset(self):
-        allowed = allowed_builtin_commands({"ROCKETCHAT_ALLOW_BUILTIN_PRESET": "personal"})
+        allowed = allowed_builtin_commands({"ROCKETCHAT_TEAM_ALLOW_BUILTIN_PRESET": "personal"})
         self.assertNotIn("preset", allowed)
 
 
@@ -123,7 +123,7 @@ class TestStopAllowedByDefault(unittest.TestCase):
         self.assertIn("stop", allowed_builtin_commands({}))
 
     def test_stop_can_still_be_switched_off(self):
-        self.assertNotIn("stop", allowed_builtin_commands({"ROCKETCHAT_ALLOW_BUILTIN_STOP": "false"}))
+        self.assertNotIn("stop", allowed_builtin_commands({"ROCKETCHAT_TEAM_ALLOW_BUILTIN_STOP": "false"}))
 
     def test_stop_passes_the_guard(self):
         self.assertEqual(blocked_builtin_command("/stop", DEFAULT_ALLOWED_BUILTIN_COMMANDS, {}), "")
@@ -151,15 +151,15 @@ class TestBlockedPersistentApproval(unittest.TestCase):
                 self.assertEqual(blocked_persistent_approval(text, DEFAULT_ALLOWED_BUILTIN_COMMANDS), "")
 
     def test_allow_key_and_personal_preset_open_it(self):
-        for env in ({"ROCKETCHAT_ALLOW_BUILTIN_ALWAYS": "true"},
-                    {"ROCKETCHAT_ALLOW_BUILTIN_PRESET": "personal"}):
+        for env in ({"ROCKETCHAT_TEAM_ALLOW_BUILTIN_ALWAYS": "true"},
+                    {"ROCKETCHAT_TEAM_ALLOW_BUILTIN_PRESET": "personal"}):
             with self.subTest(env=env):
                 self.assertEqual(blocked_persistent_approval("/always", allowed_builtin_commands(env)), "")
 
     def test_personal_preset_can_close_it_again(self):
         allowed = allowed_builtin_commands({
-            "ROCKETCHAT_ALLOW_BUILTIN_PRESET": "personal",
-            "ROCKETCHAT_ALLOW_BUILTIN_ALWAYS": "false",
+            "ROCKETCHAT_TEAM_ALLOW_BUILTIN_PRESET": "personal",
+            "ROCKETCHAT_TEAM_ALLOW_BUILTIN_ALWAYS": "false",
         })
         self.assertEqual(blocked_persistent_approval("/approve always", allowed), PERSISTENT_APPROVAL_KEY)
 
@@ -183,27 +183,27 @@ class TestAllowedBuiltinCommands(unittest.TestCase):
         self.assertIn("approve", allowed_builtin_commands({}))
 
     def test_env_flag_turns_a_command_on(self):
-        allowed = allowed_builtin_commands({"ROCKETCHAT_ALLOW_BUILTIN_STATUS": "true"})
+        allowed = allowed_builtin_commands({"ROCKETCHAT_TEAM_ALLOW_BUILTIN_STATUS": "true"})
         self.assertIn("status", allowed)
         self.assertIn("new", allowed)  # the default is not lost by adding another
 
     def test_env_flag_turns_new_off(self):
-        allowed = allowed_builtin_commands({"ROCKETCHAT_ALLOW_BUILTIN_NEW": "false"})
+        allowed = allowed_builtin_commands({"ROCKETCHAT_TEAM_ALLOW_BUILTIN_NEW": "false"})
         self.assertNotIn("new", allowed)
 
     def test_typo_value_does_not_enable_a_default_off_command(self):
-        allowed = allowed_builtin_commands({"ROCKETCHAT_ALLOW_BUILTIN_MODEL": "yse"})
+        allowed = allowed_builtin_commands({"ROCKETCHAT_TEAM_ALLOW_BUILTIN_MODEL": "yse"})
         self.assertNotIn("model", allowed)  # falls back to its own default (off), not "on"
 
     def test_typo_value_does_not_disable_a_default_on_command(self):
-        allowed = allowed_builtin_commands({"ROCKETCHAT_ALLOW_BUILTIN_NEW": "flase"})
+        allowed = allowed_builtin_commands({"ROCKETCHAT_TEAM_ALLOW_BUILTIN_NEW": "flase"})
         self.assertIn("new", allowed)  # falls back to its own default (on), not "off"
 
     def test_only_recognised_true_values_enable_a_command(self):
         for value in ("true", "1", "yes", "on", "TRUE", "On"):
             self.assertIn(
                 "status",
-                allowed_builtin_commands({"ROCKETCHAT_ALLOW_BUILTIN_STATUS": value}),
+                allowed_builtin_commands({"ROCKETCHAT_TEAM_ALLOW_BUILTIN_STATUS": value}),
                 msg=f"value={value!r} should enable it",
             )
 
@@ -211,7 +211,7 @@ class TestAllowedBuiltinCommands(unittest.TestCase):
         for value in ("false", "0", "no", "off", "FALSE", "Off"):
             self.assertNotIn(
                 "new",
-                allowed_builtin_commands({"ROCKETCHAT_ALLOW_BUILTIN_NEW": value}),
+                allowed_builtin_commands({"ROCKETCHAT_TEAM_ALLOW_BUILTIN_NEW": value}),
                 msg=f"value={value!r} should disable it",
             )
 
@@ -263,21 +263,21 @@ class TestBlockedBuiltinCommand(unittest.TestCase):
         self.assertEqual(self.block("/hb"), "heartbeat")
 
     def test_alias_follows_its_command(self):
-        allowed = allowed_builtin_commands({"ROCKETCHAT_ALLOW_BUILTIN_HEARTBEAT": "true"})
+        allowed = allowed_builtin_commands({"ROCKETCHAT_TEAM_ALLOW_BUILTIN_HEARTBEAT": "true"})
         self.assertEqual(self.block("/hb", allowed), "")
         self.assertEqual(self.block("/heartbeat", allowed), "")
 
     def test_reset_keeps_its_own_allowlist_entry(self):
-        allowed = allowed_builtin_commands({"ROCKETCHAT_ALLOW_BUILTIN_RESET": "false"})
+        allowed = allowed_builtin_commands({"ROCKETCHAT_TEAM_ALLOW_BUILTIN_RESET": "false"})
         self.assertEqual(self.block("/reset", allowed), "reset")
         self.assertEqual(self.block("/new", allowed), "")
 
     def test_any_word_can_be_allowed_by_its_own_key(self):
-        allowed = allowed_builtin_commands({"ROCKETCHAT_ALLOW_BUILTIN_DEPLOY": "true"})
+        allowed = allowed_builtin_commands({"ROCKETCHAT_TEAM_ALLOW_BUILTIN_DEPLOY": "true"})
         self.assertEqual(self.block("/deploy", allowed), "")
 
     def test_a_skill_is_allowed_by_its_skill_key(self):
-        env = {"ROCKETCHAT_ALLOW_SKILL_GOOGLE_WORKSPACE": "true"}
+        env = {"ROCKETCHAT_TEAM_ALLOW_SKILL_GOOGLE_WORKSPACE": "true"}
         self.assertEqual(self.block("/google-workspace do X", env=env), "")
         self.assertEqual(self.block("/google_workspace do X", env=env), "")
         self.assertEqual(self.block("/other-skill", env=env), "other_skill")
@@ -299,7 +299,7 @@ class TestBangToSlash(unittest.TestCase):
                 self.assertEqual(self.bang(text), text)
 
     def test_an_allowed_skill_is_rewritten(self):
-        env = {"ROCKETCHAT_ALLOW_SKILL_GOOGLE_WORKSPACE": "true"}
+        env = {"ROCKETCHAT_TEAM_ALLOW_SKILL_GOOGLE_WORKSPACE": "true"}
         self.assertEqual(self.bang("!google-workspace x", env), "/google-workspace x")
         self.assertEqual(self.bang("!google-workspace x"), "!google-workspace x")
 
@@ -398,7 +398,7 @@ class TestIsSkillCommandAllowed(unittest.TestCase):
     def test_env_flag_turns_a_skill_on(self):
         self.assertTrue(
             is_skill_command_allowed(
-                "google-workspace", {"ROCKETCHAT_ALLOW_SKILL_GOOGLE_WORKSPACE": "true"}
+                "google-workspace", {"ROCKETCHAT_TEAM_ALLOW_SKILL_GOOGLE_WORKSPACE": "true"}
             )
         )
 
@@ -406,14 +406,14 @@ class TestIsSkillCommandAllowed(unittest.TestCase):
         self.assertTrue(
             is_skill_command_allowed(
                 "node-inspect-debugger",
-                {"ROCKETCHAT_ALLOW_SKILL_NODE_INSPECT_DEBUGGER": "true"},
+                {"ROCKETCHAT_TEAM_ALLOW_SKILL_NODE_INSPECT_DEBUGGER": "true"},
             )
         )
 
     def test_typo_value_does_not_enable_it(self):
         self.assertFalse(
             is_skill_command_allowed(
-                "computer-use", {"ROCKETCHAT_ALLOW_SKILL_COMPUTER_USE": "yse"}
+                "computer-use", {"ROCKETCHAT_TEAM_ALLOW_SKILL_COMPUTER_USE": "yse"}
             )
         )
 

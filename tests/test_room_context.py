@@ -113,8 +113,8 @@ class _Base(unittest.TestCase):
         # filter here, so the test runs the same years from now. Pinned zone, so the
         # block's timestamps do not depend on the machine's zone.
         self.cfg = load_config({}, {
-            "ROCKETCHAT_INBOUND_DEDUP_RETENTION_HOURS": "1000000",
-            "ROCKETCHAT_TIMEZONE": TEST_TIMEZONE,
+            "ROCKETCHAT_TEAM_INBOUND_DEDUP_RETENTION_HOURS": "1000000",
+            "ROCKETCHAT_TEAM_TIMEZONE": TEST_TIMEZONE,
         })
         self.InboundDeduplicator = InboundDeduplicator
         self.OutboundDeduplicator = OutboundDeduplicator
@@ -243,8 +243,8 @@ class TestScope(_Base):
 
         rest = _FakeRest(room=list(WINDOW))
         instance = self.instance(rest, _cfg=load_config({}, {
-            "ROCKETCHAT_HISTORY_LIMIT": "0",
-            "ROCKETCHAT_INBOUND_DEDUP_RETENTION_HOURS": "1000000",
+            "ROCKETCHAT_TEAM_HISTORY_LIMIT": "0",
+            "ROCKETCHAT_TEAM_INBOUND_DEDUP_RETENTION_HOURS": "1000000",
         }))
         self.run_turn(instance, _payload())
         rest.room_history.assert_not_awaited()
@@ -406,7 +406,7 @@ class TestReplyInThread(_Base):
         self.run_turn(instance, _payload(text=f"@{BOT} /model gpt", tmid="root-1"))
         instance.handle_message.assert_not_awaited()
         self.assertEqual(rest.post_message.await_args.kwargs, {"tmid": "root-1"})
-        self.assertIn("ROCKETCHAT_ALLOW_BUILTIN_MODEL", rest.post_message.await_args.args[1])
+        self.assertIn("ROCKETCHAT_TEAM_ALLOW_BUILTIN_MODEL", rest.post_message.await_args.args[1])
 
 
 
@@ -490,10 +490,10 @@ class TestTriggerFiles(_Base):
         from config import load_config
 
         self.cfg = load_config({}, {
-            "ROCKETCHAT_INBOUND_DEDUP_RETENTION_HOURS": "1000000",
-            "ROCKETCHAT_TIMEZONE": TEST_TIMEZONE,
-            "ROCKETCHAT_TRANSPORT": "webhook",
-            "ROCKETCHAT_WEBHOOK_SECRET": "",
+            "ROCKETCHAT_TEAM_INBOUND_DEDUP_RETENTION_HOURS": "1000000",
+            "ROCKETCHAT_TEAM_TIMEZONE": TEST_TIMEZONE,
+            "ROCKETCHAT_TEAM_TRANSPORT": "webhook",
+            "ROCKETCHAT_TEAM_WEBHOOK_SECRET": "",
         })
         rest = _FakeRest(room=list(WINDOW), root={"_id": "m1", "files": self.FILES})
         instance = self.instance(rest)

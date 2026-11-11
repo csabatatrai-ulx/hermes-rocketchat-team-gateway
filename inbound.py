@@ -20,7 +20,7 @@ part that has produced the most live bugs:
   a call start, a join, a rename) never starts a turn; the age guard then drops
   anything older than the dedup retention (a Rocket.Chat redelivery of a
   days-old message must never reach the agent, even after the cache has
-  forgotten its id); the ignored-sender filter (``ROCKETCHAT_IGNORE_SENDERS``,
+  forgotten its id); the ignored-sender filter (``ROCKETCHAT_TEAM_IGNORE_SENDERS``,
   the other bots: no bot-to-bot reply loop) runs after the mention/DM filter
   and before the allowlist; the dedup runs only AFTER the mention/DM,
   ignored-sender and allowlist filters (so ordinary room chatter, an ignored
@@ -64,8 +64,8 @@ IGNORE_DUPLICATE = "ignore_duplicate"    # 200 — same message_id seen already
 IGNORE_STALE = "ignore_stale"            # 200 — older than the dedup retention window
 IGNORE_NO_MENTION = "ignore_no_mention"  # 200 — not addressed to this bot
 IGNORE_NOT_ALLOWED = "ignore_not_allowed"  # 200 — sender not on the allowlist
-IGNORE_SENDER = "ignore_sender"          # 200 — sender on ROCKETCHAT_IGNORE_SENDERS (e.g. another bot)
-HANDLE_DM_ONLY_NOTICE = "handle_dm_only_notice"  # 200 — ROCKETCHAT_DM_ONLY: a room mention, no agent turn
+IGNORE_SENDER = "ignore_sender"          # 200 — sender on ROCKETCHAT_TEAM_IGNORE_SENDERS (e.g. another bot)
+HANDLE_DM_ONLY_NOTICE = "handle_dm_only_notice"  # 200 — ROCKETCHAT_TEAM_DM_ONLY: a room mention, no agent turn
 HANDLE_WHOAMI = "handle_whoami"          # 200 — identity-resolution report, no agent turn
 HANDLE_BUILTIN_COMMAND_BLOCKED = "handle_builtin_command_blocked"  # 200 — recognised Hermes command, not on the allowlist, no agent turn
 HANDLE_MESSAGE = "handle_message"        # 200 — run an agent turn
@@ -275,7 +275,7 @@ def is_own_message(payload: Dict[str, Any], bot_user_id: str, bot_username: str)
 def is_ignored_sender(
     sender_id: str, sender_username: str, ignore_senders: Optional[List[str]]
 ) -> bool:
-    """Whether the sender is on the ``ROCKETCHAT_IGNORE_SENDERS`` list.
+    """Whether the sender is on the ``ROCKETCHAT_TEAM_IGNORE_SENDERS`` list.
 
     An item is a user id (exact match) or a username (case-insensitive). Empty list = nobody.
     """
@@ -336,7 +336,7 @@ def classify_inbound(
     guard on the payload's ``timestamp``; ``now_fn`` is injectable for tests.
     ``group_direct``: the caller found the payload's ``t='d'`` room to have
     more than two participants (``rooms.info``) - it is then handled as a room.
-    ``dm_only`` (``ROCKETCHAT_DM_ONLY``): a room delivery that passed the
+    ``dm_only`` (``ROCKETCHAT_TEAM_DM_ONLY``): a room delivery that passed the
     mention and ignored-sender filters becomes :data:`HANDLE_DM_ONLY_NOTICE`
     (no agent turn, no dedup entry), whoever the sender is.
     """
@@ -412,7 +412,7 @@ def classify_inbound(
     if is_ignored_sender(sender_id, sender_username, ignore_senders):
         return decision(IGNORE_SENDER)
 
-    # ROCKETCHAT_DM_ONLY: never a turn in a room (group DMs included). BEFORE the
+    # ROCKETCHAT_TEAM_DM_ONLY: never a turn in a room (group DMs included). BEFORE the
     # allowlist: the owner gets this answer too when mentioning the bot in a room;
     # before the dedup, since no turn runs. After the mention filter, so room chatter
     # causes no notice.

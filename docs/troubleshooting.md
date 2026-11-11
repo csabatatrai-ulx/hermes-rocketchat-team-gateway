@@ -7,7 +7,7 @@ The plugin logs at INFO to Hermes's `agent.log`; the console shows WARNING and a
 | `Rocket.Chat: not configured, missing: …` | A required setting is unset; the log names it |
 | `Rocket.Chat: failed to authenticate` | Wrong URL, user ID or token. Check with `curl -H "X-Auth-Token: TOKEN" -H "X-User-Id: ID" https://chat.example.com/api/v1/me` |
 | `totp-required` on REST calls | The token was created without "Ignore Two Factor Authentication". Create a new one |
-| The bot does not answer | Is it a member of the room? Do `ROCKETCHAT_ALLOWED_USERS` hold user IDs, not usernames? Run `@bot /whoami` and check the startup log for import errors |
+| The bot does not answer | Is it a member of the room? Do `ROCKETCHAT_TEAM_ALLOWED_USERS` hold user IDs, not usernames? Run `@bot /whoami` and check the startup log for import errors |
 | A command does nothing in the web client | The client handled it. Mention the bot first: `@hermes /new` |
 | `The /x command is not enabled over Rocket.Chat` | The guard works as designed. See [commands](commands.md) |
 | "The model provider rejected the request" | Authentication with the provider failed, the bot is fine. The log has `model endpoint problem (kind=auth)`. Check the API key and `hermes config show` |

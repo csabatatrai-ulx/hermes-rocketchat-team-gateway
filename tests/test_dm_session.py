@@ -4,10 +4,10 @@ A DM's session belongs to Hermes core. The turn reaches core as ``chat_type="dm"
 ``None``); a DM is one continuous session until ``/new``. Cases:
 
 1. key isolation: a DM gets core's DM key, which does not match a room key even with the same rid; two DMs have two keys;
-2. context: no block; with ``ROCKETCHAT_DM_SEED_MESSAGES > 0`` first contact (the bot has not answered) gets a seed from
+2. context: no block; with ``ROCKETCHAT_TEAM_DM_SEED_MESSAGES > 0`` first contact (the bot has not answered) gets a seed from
    ``dm.history``;
 3. group DM (3 participants): room rules;
-4. a ``ROCKETCHAT_IGNORE_SENDERS`` sender starts no turn and does not enter the dedup cache;
+4. a ``ROCKETCHAT_TEAM_IGNORE_SENDERS`` sender starts no turn and does not enter the dedup cache;
 5. a refused DM: no outgoing message, no text in the log line;
 6. ``/new``: belongs to core, bare, on the same DM key;
 7. privacy: a room turn's context never contains a DM message;
@@ -127,27 +127,27 @@ class TestPureHelpers(unittest.TestCase):
 
 
 class TestTimezoneConfig(unittest.TestCase):
-    """``ROCKETCHAT_TIMEZONE``: the zone of the block's timestamps."""
+    """``ROCKETCHAT_TEAM_TIMEZONE``: the zone of the block's timestamps."""
 
     def test_default_is_the_local_time_zone(self):
         self.assertIsNone(load_config({}, {}).timezone)
-        self.assertIsNone(load_config({}, {"ROCKETCHAT_TIMEZONE": "  "}).timezone)
+        self.assertIsNone(load_config({}, {"ROCKETCHAT_TEAM_TIMEZONE": "  "}).timezone)
 
     def test_iana_name_from_env_and_extra(self):
-        cfg = load_config({}, {"ROCKETCHAT_TIMEZONE": " Europe/Berlin "})
+        cfg = load_config({}, {"ROCKETCHAT_TEAM_TIMEZONE": " Europe/Berlin "})
         self.assertEqual(cfg.timezone, ZoneInfo("Europe/Berlin"))
-        cfg = load_config({"timezone": "UTC"}, {"ROCKETCHAT_TIMEZONE": "Europe/Berlin"})
+        cfg = load_config({"timezone": "UTC"}, {"ROCKETCHAT_TEAM_TIMEZONE": "Europe/Berlin"})
         self.assertEqual(cfg.timezone, ZoneInfo("Europe/Berlin"))  # az env nyer (env > YAML)
 
     def test_invalid_name_keeps_the_local_time_zone_with_a_warning(self):
         for raw in ("Mars/Olympus", "Europe", "../Europe/Berlin"):
             with self.subTest(raw=raw):
                 with self.assertLogs("config", level="WARNING") as logs:
-                    cfg = load_config({}, {"ROCKETCHAT_TIMEZONE": raw})
+                    cfg = load_config({}, {"ROCKETCHAT_TEAM_TIMEZONE": raw})
                 self.assertIsNone(cfg.timezone)
                 self.assertEqual(
                     [r.getMessage() for r in logs.records],
-                    [f"Rocket.Chat: ROCKETCHAT_TIMEZONE={raw!r} is not a valid IANA time "
+                    [f"Rocket.Chat: ROCKETCHAT_TEAM_TIMEZONE={raw!r} is not a valid IANA time "
                      "zone, using the local time zone"],
                 )
 
@@ -159,21 +159,21 @@ class TestDmConfig(unittest.TestCase):
 
     def test_values_from_env_and_extra(self):
         cfg = load_config({"dm_seed_messages": "5"}, {
-            "ROCKETCHAT_DM_SEED_MESSAGES": "9",
-            "ROCKETCHAT_IGNORE_SENDERS": "OtherBot, uid-x ,",
+            "ROCKETCHAT_TEAM_DM_SEED_MESSAGES": "9",
+            "ROCKETCHAT_TEAM_IGNORE_SENDERS": "OtherBot, uid-x ,",
         })
         self.assertEqual(cfg.dm_seed_messages, 9)  # env wins (env over YAML, Hermes's rule)
         self.assertEqual(cfg.ignore_senders, ["OtherBot", "uid-x"])
 
     def test_invalid_values_keep_the_default_with_a_warning(self):
         with self.assertLogs("config", level="WARNING") as logs:
-            cfg = load_config({}, {"ROCKETCHAT_DM_SEED_MESSAGES": "-1"})
+            cfg = load_config({}, {"ROCKETCHAT_TEAM_DM_SEED_MESSAGES": "-1"})
         self.assertEqual(cfg.dm_seed_messages, 0)
-        self.assertIn("ROCKETCHAT_DM_SEED_MESSAGES", "\n".join(logs.output))
+        self.assertIn("ROCKETCHAT_TEAM_DM_SEED_MESSAGES", "\n".join(logs.output))
 
     def test_seed_is_capped_at_100(self):
         with self.assertLogs("config", level="WARNING"):
-            cfg = load_config({}, {"ROCKETCHAT_DM_SEED_MESSAGES": "500"})
+            cfg = load_config({}, {"ROCKETCHAT_TEAM_DM_SEED_MESSAGES": "500"})
         self.assertEqual(cfg.dm_seed_messages, 100)
 
 
@@ -289,7 +289,7 @@ def _real_session_key(source):
     from gateway.session import build_session_key
 
     full = SimpleNamespace(
-        platform=SimpleNamespace(value="rocketchat"), scope_id=None, user_id_alt=None,
+        platform=SimpleNamespace(value="rocketchat_team"), scope_id=None, user_id_alt=None,
         prospective_thread_id=None, **vars(source),
     )
     full.message_id = None
@@ -307,8 +307,8 @@ class _Base(unittest.TestCase):
         time.tzset()
         self.webhook_mixin = load_mixin_module("webhook_mixin")
         self.adapter_module = load_mixin_module("adapter")
-        env = {"ROCKETCHAT_INBOUND_DEDUP_RETENTION_HOURS": "1000000",
-               "ROCKETCHAT_TIMEZONE": "Europe/Berlin"}
+        env = {"ROCKETCHAT_TEAM_INBOUND_DEDUP_RETENTION_HOURS": "1000000",
+               "ROCKETCHAT_TEAM_TIMEZONE": "Europe/Berlin"}
         env.update(self.ENV)
         self.cfg = load_config({}, env)
 
@@ -384,7 +384,7 @@ class TestKeyIsolation(_Base):
 
         keys = {_real_session_key(s) for s in (dm_source, room_source, other_source)}
         self.assertEqual(len(keys), 3)
-        self.assertEqual(_real_session_key(dm_source), "agent:main:rocketchat:dm:dmRID")
+        self.assertEqual(_real_session_key(dm_source), "agent:main:rocketchat_team:dm:dmRID")
 
     def test_no_daily_switch(self):
         instance = self.instance(_FakeRest())
@@ -429,9 +429,9 @@ class TestDmContext(_Base):
         rest.room_history.assert_not_awaited()
 
     def test_seed_on_the_first_contact_comes_from_the_dm_history(self):
-        cfg = load_config({}, {"ROCKETCHAT_DM_SEED_MESSAGES": "2",
-                               "ROCKETCHAT_INBOUND_DEDUP_RETENTION_HOURS": "1000000",
-                               "ROCKETCHAT_TIMEZONE": "Europe/Berlin"})
+        cfg = load_config({}, {"ROCKETCHAT_TEAM_DM_SEED_MESSAGES": "2",
+                               "ROCKETCHAT_TEAM_INBOUND_DEDUP_RETENTION_HOURS": "1000000",
+                               "ROCKETCHAT_TEAM_TIMEZONE": "Europe/Berlin"})
         rest = _FakeRest(histories={"dmRID": list(self.DM_HISTORY)})
         instance = self.instance(rest, cfg=cfg)
         with self.assertLogs(self.webhook_mixin.logger, level="INFO") as logs:
@@ -449,8 +449,8 @@ class TestDmContext(_Base):
         self.assertNotIn("note", joined)
 
     def test_no_seed_once_the_bot_ever_replied(self):
-        cfg = load_config({}, {"ROCKETCHAT_DM_SEED_MESSAGES": "2",
-                               "ROCKETCHAT_INBOUND_DEDUP_RETENTION_HOURS": "1000000"})
+        cfg = load_config({}, {"ROCKETCHAT_TEAM_DM_SEED_MESSAGES": "2",
+                               "ROCKETCHAT_TEAM_INBOUND_DEDUP_RETENTION_HOURS": "1000000"})
         history = [_msg("b0", BOT_UID, BOT, "old answer", "2026-09-01T07:31:00.000Z")] + list(self.DM_HISTORY)
         rest = _FakeRest(histories={"dmRID": history})
         instance = self.instance(rest, cfg=cfg)
@@ -500,8 +500,8 @@ class TestDmThreadSeed(_Base):
         self.assertEqual(self.last_event(instance).channel_context, "[Rocket.Chat room_id: dmRID]")
 
     def test_history_limit_zero_turns_it_off(self):
-        cfg = load_config({}, {"ROCKETCHAT_HISTORY_LIMIT": "0",
-                               "ROCKETCHAT_INBOUND_DEDUP_RETENTION_HOURS": "1000000"})
+        cfg = load_config({}, {"ROCKETCHAT_TEAM_HISTORY_LIMIT": "0",
+                               "ROCKETCHAT_TEAM_INBOUND_DEDUP_RETENTION_HOURS": "1000000"})
         rest = self.rest()
         instance = self.instance(rest, cfg=cfg)
         self.run_turn(instance, _dm_payload(tmid="root-1"))
@@ -576,7 +576,7 @@ class TestGroupDm(_Base):
 class TestIgnoredSender(_Base):
     """5. eset."""
 
-    ENV = {"ROCKETCHAT_IGNORE_SENDERS": "OtherBot"}
+    ENV = {"ROCKETCHAT_TEAM_IGNORE_SENDERS": "OtherBot"}
 
     def test_ignored_sender_dm_starts_no_turn_and_is_not_recorded(self):
         rest = _FakeRest()
@@ -597,7 +597,7 @@ class TestIgnoredSender(_Base):
 class TestNotAllowedDm(_Base):
     """6. eset."""
 
-    ENV = {"ROCKETCHAT_ALLOWED_USERS": "uid-bob"}
+    ENV = {"ROCKETCHAT_TEAM_ALLOWED_USERS": "uid-bob"}
 
     def test_not_allowed_dm_is_dropped_silently_with_an_id_only_log_line(self):
         rest = _FakeRest()
@@ -669,8 +669,8 @@ class TestPrivacy(_Base):
         for seed in ("0", "5"):
             with self.subTest(seed=seed):
                 self._check(load_config({}, {
-                    "ROCKETCHAT_DM_SEED_MESSAGES": seed,
-                    "ROCKETCHAT_INBOUND_DEDUP_RETENTION_HOURS": "1000000",
+                    "ROCKETCHAT_TEAM_DM_SEED_MESSAGES": seed,
+                    "ROCKETCHAT_TEAM_INBOUND_DEDUP_RETENTION_HOURS": "1000000",
                 }))
 
 

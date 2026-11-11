@@ -1,6 +1,6 @@
 """Inbound Outgoing Webhook reception and the shared inbound dispatch for the Rocket.Chat adapter.
 
-WebhookInboundMixin handles receiving the inbound HTTP webhook (``ROCKETCHAT_TRANSPORT=webhook``, the fallback path) and
+WebhookInboundMixin handles receiving the inbound HTTP webhook (``ROCKETCHAT_TEAM_TRANSPORT=webhook``, the fallback path) and
 wiring it into the decision chain (``classify_inbound``). ``RocketChatAdapter`` inherits it together with
 ``DdpTransportMixin``.
 
@@ -32,6 +32,7 @@ from .builtin_commands import (
     parse_builtin_command_name,
     blocked_persistent_approval,
 )
+from .config import PLATFORM_NAME
 from .context_refs import neutralize_context_references
 from .dm_session import (
     bot_replied_since,
@@ -96,7 +97,7 @@ def log_ignored_delivery(decision: InboundDecision) -> None:
 
     * A repeated or too-old delivery: debug, not warning. Rocket.Chat regularly re-sends the same message because of a
       reaction, edit, pin or thread reply (the bot's own ack reaction included); that is expected, not an error.
-    * A ``ROCKETCHAT_IGNORE_SENDERS`` sender and a DM from a sender who is not allowed: info, ids only; the message text
+    * A ``ROCKETCHAT_TEAM_IGNORE_SENDERS`` sender and a DM from a sender who is not allowed: info, ids only; the message text
       never enters the log. The bot does not answer a refused DM (an answer would reveal that it is alive and that an
       allowlist exists); a refused mention in a room stays unlogged.
     """
@@ -134,7 +135,7 @@ class WebhookInboundMixin:
 
     async def _handle_health(self, request: "web.Request") -> "web.Response":
         from aiohttp import web
-        return web.json_response({"status": "ok", "platform": "rocketchat"})
+        return web.json_response({"status": "ok", "platform": PLATFORM_NAME})
 
     async def _handle_outgoing_webhook(self, request: "web.Request") -> "web.Response":
         """Turn one webhook delivery into an agent turn or nothing.
@@ -262,7 +263,7 @@ class WebhookInboundMixin:
         # Command replies also go to the trigger's thread (``decision.thread_id``, "" in
         # the main channel), like the agent's answer.
         if decision.outcome == HANDLE_DM_ONLY_NOTICE:
-            # ROCKETCHAT_DM_ONLY: one notice per room (per process), so an invitation or
+            # ROCKETCHAT_TEAM_DM_ONLY: one notice per room (per process), so an invitation or
             # repeated mention does not litter the room; the text reveals nothing about
             # the owner or the settings. The message text is not logged.
             noticed = self._dm_only_noticed_rooms
@@ -309,8 +310,8 @@ class WebhookInboundMixin:
                     "builtin_command_blocked" if decision.builtin_command_name in BUILTIN_COMMANDS
                     else "unknown_command_blocked",
                     command=typed,
-                    env_key=f"ROCKETCHAT_ALLOW_BUILTIN_{decision.builtin_command_name.upper()}",
-                    skill_env_key=f"ROCKETCHAT_ALLOW_SKILL_{typed.upper().replace('-', '_')}",
+                    env_key=f"ROCKETCHAT_TEAM_ALLOW_BUILTIN_{decision.builtin_command_name.upper()}",
+                    skill_env_key=f"ROCKETCHAT_TEAM_ALLOW_SKILL_{typed.upper().replace('-', '_')}",
                 ),
                 tmid=decision.thread_id,
             )
@@ -356,7 +357,7 @@ class WebhookInboundMixin:
     def _unverified_sender_check(self) -> UnverifiedSender:
         """The condition of the block's ``[unverified sender]`` marker, or ``None``.
 
-        Marks only when there is an allowlist (``ROCKETCHAT_ALLOWED_USERS`` and no ``ROCKETCHAT_ALLOW_ALL_USERS``): the line's
+        Marks only when there is an allowlist (``ROCKETCHAT_TEAM_ALLOWED_USERS`` and no ``ROCKETCHAT_TEAM_ALLOW_ALL_USERS``): the line's
         author is not allowed (the same id/name rule as the inbound filter). Rendering never marks the bot's own line.
         """
         cfg = self._cfg
@@ -462,7 +463,7 @@ class WebhookInboundMixin:
         return kept
 
     async def _fetch_dm_seed(self, decision: InboundDecision) -> list:
-        """The first-contact seed (``ROCKETCHAT_DM_SEED_MESSAGES``).
+        """The first-contact seed (``ROCKETCHAT_TEAM_DM_SEED_MESSAGES``).
 
         A single ``dm.history`` page (``room_history``'s chain, at most 100 messages, before the trigger): if the bot has already
         answered in the fetched history, no seed (the session transcript is the context); otherwise at most the DM's last
@@ -588,7 +589,7 @@ class WebhookInboundMixin:
         Sessions belong to Hermes core (see room_session.py and dm_session.py): ``chat_type="dm"`` in a DM, ``"channel"`` in a room, and
         ``thread_id`` is the real thread. In a room the block runs since the asker's previous mention (since the bot's last reply in a
         shared thread), with ``[unverified sender]`` markers if there is an allowlist; a DM has no block, only the room_id line (and the
-        first-contact seed with ``ROCKETCHAT_DM_SEED_MESSAGES > 0``).
+        first-contact seed with ``ROCKETCHAT_TEAM_DM_SEED_MESSAGES > 0``).
         """
         try:
             text = decision.text

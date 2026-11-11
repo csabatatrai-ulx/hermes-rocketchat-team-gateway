@@ -8,7 +8,7 @@ compression. So this module does only three things:
   room. The server tells them apart by ``usersCount`` (``Rooms.findGroupDMsByUids``: ``usersCount > 2``,
   ``find1On1ByUserId``: ``usersCount: 2``). ``uids`` is less reliable: the server removes a deleted user from it but
   does not decrease ``usersCount``. So ``usersCount`` decides and ``uids`` is only a fallback.
-* **Seed.** With ``ROCKETCHAT_DM_SEED_MESSAGES > 0``, while the bot has not answered in the fetched DM history (first
+* **Seed.** With ``ROCKETCHAT_TEAM_DM_SEED_MESSAGES > 0``, while the bot has not answered in the fetched DM history (first
   contact), the turn gets at most that many of the DM's last messages, in the room block's format.
 * **A DM thread's first turn.** A thread in a DM is its own session that starts empty; someone continuing under a bot
   reply with "Reply in thread" is reacting to that message. While the bot has not written in the thread, the turn gets

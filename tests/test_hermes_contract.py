@@ -63,6 +63,7 @@ PUBLIC_SURFACE = frozenset({
     "gateway.platforms.event",
     "gateway.platforms.helpers",
     "hermes_cli.cli_output",
+    "hermes_constants:get_hermes_home",
     "hermes_cli.config",
     "hermes_cli.gateway_setup_wizard:confirm_reconfigure",
     "hermes_cli.gateway_setup_wizard:print_setup_header",
@@ -361,26 +362,26 @@ class DocumentedHelperTests(unittest.TestCase):
         from unittest import mock
 
         scoped_env = sys.modules[self.adapter._ScopedEnv.__module__]
-        values = {"ROCKETCHAT_URL": "https://chat.example/", "ROCKETCHAT_TOKEN": "t",
-                  "ROCKETCHAT_USER_ID": "u", "ROCKETCHAT_BOT_USERNAME": "bot"}
+        values = {"ROCKETCHAT_TEAM_URL": "https://chat.example/", "ROCKETCHAT_TEAM_TOKEN": "t",
+                  "ROCKETCHAT_TEAM_USER_ID": "u", "ROCKETCHAT_TEAM_BOT_USERNAME": "bot"}
         with mock.patch.object(scoped_env, "get_scoped_secret",
                                side_effect=lambda name, default=None: values.get(name, default)) as reader:
             cfg = self.adapter._config_from_platform(mock.Mock(extra={}, token=None))
         self.assertEqual((cfg.base_url, cfg.token, cfg.user_id, cfg.bot_username),
                          ("https://chat.example", "t", "u", "bot"))
-        reader.assert_any_call("ROCKETCHAT_TOKEN", None)
+        reader.assert_any_call("ROCKETCHAT_TEAM_TOKEN", None)
 
     def test_is_connected_uses_the_documented_env_probe(self):
         from unittest import mock
 
         import hermes_cli.gateway as gateway_mod
 
-        present = {"ROCKETCHAT_TOKEN": "t", "ROCKETCHAT_URL": "u",
-                   "ROCKETCHAT_USER_ID": "i", "ROCKETCHAT_BOT_USERNAME": "b"}
+        present = {"ROCKETCHAT_TEAM_TOKEN": "t", "ROCKETCHAT_TEAM_URL": "u",
+                   "ROCKETCHAT_TEAM_USER_ID": "i", "ROCKETCHAT_TEAM_BOT_USERNAME": "b"}
         with mock.patch.object(gateway_mod, "get_env_value", side_effect=present.get):
             self.assertTrue(self.adapter._is_connected(None))
         with mock.patch.object(gateway_mod, "get_env_value",
-                               side_effect={**present, "ROCKETCHAT_URL": " "}.get):
+                               side_effect={**present, "ROCKETCHAT_TEAM_URL": " "}.get):
             self.assertFalse(self.adapter._is_connected(None))
 
 

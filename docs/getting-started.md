@@ -29,14 +29,14 @@ Supports **Rocket.Chat 8.7 – 9.x** and **Hermes Agent 0.22.3 or newer**.
 Run `hermes gateway setup` and choose Rocket.Chat. The wizard checks the credentials against the server before saving them. Or put the settings in `~/.hermes/.env` (`chmod 600`):
 
 ```dotenv
-ROCKETCHAT_URL=https://chat.example.com
-ROCKETCHAT_BOT_USERNAME=hermes
-ROCKETCHAT_USER_ID=<bot user id>
-ROCKETCHAT_TOKEN=<bot personal access token>
-ROCKETCHAT_ALLOWED_USERS=<user id>,<user id>    # user IDs, not usernames
+ROCKETCHAT_TEAM_URL=https://chat.example.com
+ROCKETCHAT_TEAM_BOT_USERNAME=hermes
+ROCKETCHAT_TEAM_USER_ID=<bot user id>
+ROCKETCHAT_TEAM_TOKEN=<bot personal access token>
+ROCKETCHAT_TEAM_ALLOWED_USERS=<user id>,<user id>    # user IDs, not usernames
 ```
 
-Decide who may talk to the bot: `ROCKETCHAT_ALLOWED_USERS`, Hermes pairing, or on a closed server `ROCKETCHAT_ALLOW_ALL_USERS=true`. Without one of them Hermes answers nobody. Every setting is listed in [Configuration](configuration.md).
+Decide who may talk to the bot: `ROCKETCHAT_TEAM_ALLOWED_USERS`, Hermes pairing, or on a closed server `ROCKETCHAT_TEAM_ALLOW_ALL_USERS=true`. Without one of them Hermes answers nobody. Every setting is listed in [Configuration](configuration.md).
 
 ## 4. Make it safe for a shared bot
 
@@ -44,7 +44,7 @@ Decide who may talk to the bot: `ROCKETCHAT_ALLOWED_USERS`, Hermes pairing, or o
     A platform plugin cannot set Hermes's configuration for you. Without an explicit tool list, Hermes grants the platform its full core toolset, including the terminal and file writes.
 
 ```bash
-hermes config set platform_toolsets.rocketchat '[my-mcp-server]'   # or [] for none
+hermes config set platform_toolsets.rocketchat_team '[my-mcp-server]'   # or [] for none
 hermes config set approvals.mode manual   # a person answers every dangerous command
 hermes config set memory.memory_enabled false        # one memory would be shared by everyone
 hermes config set memory.user_profile_enabled false
@@ -52,7 +52,7 @@ hermes config set memory.user_profile_enabled false
 
 Hermes's default `smart` approval mode lets a helper model approve flagged commands, so no one is asked. The reasons behind each setting are in [Security](security.md).
 
-`@file:`, `@url:` and the other Hermes `@` references in messages are kept inert by default, so a room member cannot attach files from the bot's workspace. For a bot only you use, `ROCKETCHAT_ALLOW_CONTEXT_REFERENCES=true` turns this off ([why](security.md#context-references)).
+`@file:`, `@url:` and the other Hermes `@` references in messages are kept inert by default, so a room member cannot attach files from the bot's workspace. For a bot only you use, `ROCKETCHAT_TEAM_ALLOW_CONTEXT_REFERENCES=true` turns this off ([why](security.md#context-references)).
 
 ## 5. Start and check
 
@@ -84,4 +84,18 @@ The Hermes plugin catalog already has a Rocket.Chat plugin, [`rocketchat-platfor
 | Dangerous commands | Hermes's text prompt | approval buttons that only the asker can use |
 | After a restart or an outage | reconnects | answers or reports the mentions it missed; no duplicate turns, even across restarts |
 
-Both register the Hermes platform name `rocketchat`, so enable only one; the last one registered wins. Switching keeps `ROCKETCHAT_URL`, `ROCKETCHAT_TOKEN`, `ROCKETCHAT_USER_ID`, `ROCKETCHAT_ALLOWED_USERS`, `platform_toolsets.rocketchat` and `deliver=rocketchat` working; add `ROCKETCHAT_BOT_USERNAME` and restart the gateway.
+The two do not clash: this plugin registers the Hermes platform id `rocketchat_team` and reads `ROCKETCHAT_TEAM_*` settings, `rocketchat-platform` registers `rocketchat` and reads `ROCKETCHAT_*`. If you run both, give each its own bot account. To switch from `rocketchat-platform`, copy `ROCKETCHAT_URL`, `ROCKETCHAT_TOKEN`, `ROCKETCHAT_USER_ID` and `ROCKETCHAT_ALLOWED_USERS` to their `ROCKETCHAT_TEAM_` names, add `ROCKETCHAT_TEAM_BOT_USERNAME`, use `platform_toolsets.rocketchat_team` and `deliver=rocketchat_team`, and restart the gateway.
+
+## Upgrading from 1.x
+
+2.0 has its own platform id, `rocketchat_team`, and reads `ROCKETCHAT_TEAM_*` instead of `ROCKETCHAT_*`. In the profile's `.env`:
+
+```bash
+sed -i 's/^ROCKETCHAT_/ROCKETCHAT_TEAM_/' ~/.hermes/.env
+```
+
+- `config.yaml`: rename the `rocketchat` keys under `platforms`, `platform_toolsets`, `platform_hints` and `display.platforms`, and a top-level `rocketchat:` section, to `rocketchat_team`
+- cron jobs: `deliver=rocketchat` becomes `deliver=rocketchat_team`
+- restart the gateway; sessions start fresh
+
+If old keys are still set and the new ones are not, the gateway log says which to rename.

@@ -129,7 +129,7 @@ class TestHandleOutgoingWebhook(unittest.TestCase):
     def test_dm_only_room_mention_notices_once_per_room_without_a_turn(self):
         from config import load_config
 
-        cfg = load_config({}, {"ROCKETCHAT_DM_ONLY": "true"}, token="t")
+        cfg = load_config({}, {"ROCKETCHAT_TEAM_DM_ONLY": "true"}, token="t")
         instance = self._instance(_cfg=cfg, _notify=AsyncMock(), _dm_only_noticed_rooms=set())
         instance._augment_and_handle = AsyncMock()
 
@@ -153,7 +153,7 @@ class TestHandleOutgoingWebhook(unittest.TestCase):
 
     def test_blocked_hyphenated_command_names_the_real_env_key(self):
         # For a hyphenated command (`/reload-mcp`) the blocking message must name the
-        # key actually read, with underscores (ROCKETCHAT_ALLOW_BUILTIN_RELOAD_MCP).
+        # key actually read, with underscores (ROCKETCHAT_TEAM_ALLOW_BUILTIN_RELOAD_MCP).
         instance = self._instance(_notify=AsyncMock())
         instance._augment_and_handle = AsyncMock()
         request = _FakeRequest(_payload(message_id="m-cmd", text=f"@{BOT} /reload-mcp"))
@@ -167,7 +167,7 @@ class TestHandleOutgoingWebhook(unittest.TestCase):
         instance._augment_and_handle.assert_not_awaited()
         instance._notify.assert_awaited_once()
         text = instance._notify.await_args.args[1]
-        self.assertIn("ROCKETCHAT_ALLOW_BUILTIN_RELOAD_MCP=true", text)
+        self.assertIn("ROCKETCHAT_TEAM_ALLOW_BUILTIN_RELOAD_MCP=true", text)
         self.assertNotIn("RELOAD-MCP", text)
 
     def _notice_for(self, text):
@@ -184,14 +184,14 @@ class TestHandleOutgoingWebhook(unittest.TestCase):
 
     def test_a_documented_command_gets_the_short_notice(self):
         text = self._notice_for("/yolo on")
-        self.assertIn("ROCKETCHAT_ALLOW_BUILTIN_YOLO=true", text)
+        self.assertIn("ROCKETCHAT_TEAM_ALLOW_BUILTIN_YOLO=true", text)
         self.assertNotIn("SKILL", text)
 
     def test_an_unknown_word_suggests_plain_text_and_names_both_keys(self):
         text = self._notice_for("/api returns 500")
         self.assertIn("leave out the leading slash", text)
-        self.assertIn("ROCKETCHAT_ALLOW_BUILTIN_API=true", text)
-        self.assertIn("ROCKETCHAT_ALLOW_SKILL_API=true", text)
+        self.assertIn("ROCKETCHAT_TEAM_ALLOW_BUILTIN_API=true", text)
+        self.assertIn("ROCKETCHAT_TEAM_ALLOW_SKILL_API=true", text)
 
     def test_persistent_approval_is_refused_and_never_reaches_hermes(self):
         # "Always approve" would write to the gateway's whole config
@@ -255,13 +255,13 @@ class TestHandleOutgoingWebhook(unittest.TestCase):
 
 @unittest.skipUnless(HERMES_AGENT_AVAILABLE, SKIP_REASON)
 class TestWebhookSecretFailsClosed(unittest.TestCase):
-    """transport=webhook + empty ROCKETCHAT_WEBHOOK_SECRET -> the platform does NOT start. DDP does not need the secret."""
+    """transport=webhook + empty ROCKETCHAT_TEAM_WEBHOOK_SECRET -> the platform does NOT start. DDP does not need the secret."""
 
     BASE_ENV = {
-        "ROCKETCHAT_URL": "http://localhost:3000",
-        "ROCKETCHAT_TOKEN": "tok",
-        "ROCKETCHAT_USER_ID": BOT_UID,
-        "ROCKETCHAT_BOT_USERNAME": BOT,
+        "ROCKETCHAT_TEAM_URL": "http://localhost:3000",
+        "ROCKETCHAT_TEAM_TOKEN": "tok",
+        "ROCKETCHAT_TEAM_USER_ID": BOT_UID,
+        "ROCKETCHAT_TEAM_BOT_USERNAME": BOT,
     }
 
     def setUp(self):
@@ -275,30 +275,30 @@ class TestWebhookSecretFailsClosed(unittest.TestCase):
             return self.adapter.validate_rocketchat_config(SimpleNamespace(extra={}, token=""))
 
     def test_webhook_without_secret_is_refused_loudly(self):
-        env = dict(self.BASE_ENV, ROCKETCHAT_TRANSPORT="webhook")
+        env = dict(self.BASE_ENV, ROCKETCHAT_TEAM_TRANSPORT="webhook")
         with self.assertLogs(self.adapter.logger, level="WARNING") as captured:
             self.assertFalse(self._validate(env))
         self.assertIn("webhook_secret", captured.output[0])
 
     def test_webhook_with_secret_is_accepted(self):
-        env = dict(self.BASE_ENV, ROCKETCHAT_TRANSPORT="webhook", ROCKETCHAT_WEBHOOK_SECRET="s")
+        env = dict(self.BASE_ENV, ROCKETCHAT_TEAM_TRANSPORT="webhook", ROCKETCHAT_TEAM_WEBHOOK_SECRET="s")
         self.assertTrue(self._validate(env))
 
     def test_ddp_without_secret_is_accepted(self):
-        self.assertTrue(self._validate(dict(self.BASE_ENV, ROCKETCHAT_TRANSPORT="ddp")))
+        self.assertTrue(self._validate(dict(self.BASE_ENV, ROCKETCHAT_TEAM_TRANSPORT="ddp")))
 
     def test_connect_refuses_before_any_network_call(self):
         from types import SimpleNamespace
 
         rest = SimpleNamespace(open=AsyncMock(), me=AsyncMock(), close=AsyncMock())
         cfg = self.adapter.load_config(
-            {}, dict(self.BASE_ENV, ROCKETCHAT_TRANSPORT="webhook", ROCKETCHAT_DEDUP_STATE_DIR="off")
+            {}, dict(self.BASE_ENV, ROCKETCHAT_TEAM_TRANSPORT="webhook", ROCKETCHAT_TEAM_DEDUP_STATE_DIR="off")
         )
         instance = make_bare_instance(self.adapter.RocketChatAdapter, _cfg=cfg, _rest=rest)
         with self.assertLogs(self.adapter.logger, level="ERROR") as captured:
             self.assertFalse(asyncio.run(instance.connect()))
         rest.open.assert_not_awaited()
-        self.assertTrue(any("ROCKETCHAT_WEBHOOK_SECRET" in line for line in captured.output))
+        self.assertTrue(any("ROCKETCHAT_TEAM_WEBHOOK_SECRET" in line for line in captured.output))
 
 
 @unittest.skipUnless(HERMES_AGENT_AVAILABLE, SKIP_REASON)
@@ -323,7 +323,7 @@ class TestConnectReadinessStatus(unittest.TestCase):
 
     def _connect(self, rest, **env):
         cfg = self.adapter.load_config(
-            {}, dict(self.BASE_ENV, ROCKETCHAT_DEDUP_STATE_DIR=self._tmp.name, **env)
+            {}, dict(self.BASE_ENV, ROCKETCHAT_TEAM_DEDUP_STATE_DIR=self._tmp.name, **env)
         )
         instance = make_bare_instance(self.adapter.RocketChatAdapter, _cfg=cfg, _rest=rest)
         with self.assertLogs(self.adapter.logger, level="ERROR"):
@@ -340,7 +340,7 @@ class TestConnectReadinessStatus(unittest.TestCase):
         from types import SimpleNamespace
 
         rest = SimpleNamespace(open=AsyncMock(), me=AsyncMock(), close=AsyncMock())
-        self.assertFalse(self._connect(rest, ROCKETCHAT_TRANSPORT="webhook"))
+        self.assertFalse(self._connect(rest, ROCKETCHAT_TEAM_TRANSPORT="webhook"))
         rest.open.assert_not_awaited()
         self.assertEqual(self._state(), "connecting")
 

@@ -2,13 +2,13 @@
 
 ## Scope
 
-This plugin is the wire between Hermes and Rocket.Chat, and nothing else. In Rocket.Chat the agent still uses every tool Hermes gives it (terminal, files, web, code, MCP servers), chosen per platform with `platform_toolsets.rocketchat`; the plugin only adds none of its own. Registering no tools is a design decision that matches Hermes's own messaging adapters, none of which registers agent tools. Hermes's platform guide also says plugins "must not register an equivalent model surface that lets the agent initiate outbound messages on its own". Capabilities such as searching a room belong to tools the agent reaches over MCP, where they work from every channel and can be permissioned separately.
+This plugin is the wire between Hermes and Rocket.Chat, and nothing else. In Rocket.Chat the agent still uses every tool Hermes gives it (terminal, files, web, code, MCP servers), chosen per platform with `platform_toolsets.rocketchat_team`; the plugin only adds none of its own. Registering no tools is a design decision that matches Hermes's own messaging adapters, none of which registers agent tools. Hermes's platform guide also says plugins "must not register an equivalent model surface that lets the agent initiate outbound messages on its own". Capabilities such as searching a room belong to tools the agent reaches over MCP, where they work from every channel and can be permissioned separately.
 
 To give the agent Rocket.Chat capabilities too (search a room, read its history, post elsewhere), connect an MCP server. Rocket.Chat 8.8 and later ships a native one (Enterprise plans with the AI add-on; alpha), and community servers exist:
 
 ```bash
 hermes mcp add rocketchat --url https://chat.example.com/api/v1/mcp   # authentication: see Rocket.Chat's MCP documentation
-hermes config set platform_toolsets.rocketchat '[terminal, rocketchat]'   # the tools this bot may use
+hermes config set platform_toolsets.rocketchat_team '[terminal, rocketchat]'   # the tools this bot may use
 ```
 
 With the optional [signed asker token](security.md#asker-token), such a server knows who is really asking.

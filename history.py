@@ -138,7 +138,7 @@ _PROGRESS_MARKER = re.compile(
 def is_progress_bubble(text: str) -> bool:
     """Whether this is the bot's tool, memory or heartbeat bubble.
 
-    With ``display.platforms.rocketchat.tool_progress``/``long_running_notifications`` on, these are
+    With ``display.platforms.rocketchat_team.tool_progress``/``long_running_notifications`` on, these are
     the bot's own messages in the room. They cannot be context boundaries (a parallel turn's bubble
     would shift "the bot's last reply") and cannot enter the block (the model would see its own work
     log). Strict: EVERY non-empty line starts with emoji + space, and at least one line is one of the

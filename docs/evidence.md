@@ -22,7 +22,7 @@ Every number below comes from a run, not from a claim. The live runs used Rocket
 
 Hermes expands `@file:` and the other `@` references in every incoming chat message before the model runs ([why it matters](security.md#context-references)). The check, on the official Hermes 0.23.0 image with Rocket.Chat 8.9.1, read the turn text Hermes stored in its session database:
 
-| Message | Before the fix | With the fix (default) | With `ROCKETCHAT_ALLOW_CONTEXT_REFERENCES=true` |
+| Message | Before the fix | With the fix (default) | With `ROCKETCHAT_TEAM_ALLOW_CONTEXT_REFERENCES=true` |
 |---|---|---|---|
 | bob, an allowed member: `@hermes ... @file:/opt/data/config.yaml @folder:/opt/data/memories` | Both attached to the turn | Plain text, nothing attached | Both attached, as Hermes does by default |
 | carol, an unverified sender, writes `@file:...` without a mention; then alice mentions the bot | Expansion attempted from the room context | Plain text, nothing attached | Plain text, nothing attached |

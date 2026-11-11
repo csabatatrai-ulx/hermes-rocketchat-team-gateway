@@ -100,7 +100,7 @@ def make_bare_instance(mixin_cls, **attrs):
     ``BasePlatformAdapter``/``Platform`` registration).
 
     The mixins cannot be instantiated through the full ``RocketChatAdapter`` in this test environment: the
-    ``Platform("rocketchat")`` enum value is only taken up by the real gateway plugin registration
+    ``Platform("rocketchat_team")`` enum value is only taken up by the real gateway plugin registration
     (``register()``), which does not run here. We want to test the mixin methods' logic, not the whole
     lifecycle, so a bare instance with exactly the attributes the tested methods use is correct and
     sufficient.

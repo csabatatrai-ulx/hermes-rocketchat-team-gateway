@@ -83,12 +83,12 @@ if not room:
     room = call("channels.create", {"name": ROOM, "members": ["hermes", "alice", "bob"]}, auth=admin)["channel"]
 
 env = {
-    "ROCKETCHAT_URL": "http://rocketchat:3000",
-    "ROCKETCHAT_BOT_USERNAME": "hermes",
-    "ROCKETCHAT_USER_ID": users["hermes"],
-    "ROCKETCHAT_TOKEN": token,
-    "ROCKETCHAT_ALLOWED_USERS": f"{users['alice']},{users['bob']}",
-    "ROCKETCHAT_HOME_CHANNEL": room["_id"],
+    "ROCKETCHAT_TEAM_URL": "http://rocketchat:3000",
+    "ROCKETCHAT_TEAM_BOT_USERNAME": "hermes",
+    "ROCKETCHAT_TEAM_USER_ID": users["hermes"],
+    "ROCKETCHAT_TEAM_TOKEN": token,
+    "ROCKETCHAT_TEAM_ALLOWED_USERS": f"{users['alice']},{users['bob']}",
+    "ROCKETCHAT_TEAM_HOME_CHANNEL": room["_id"],
 }
 (HOME / ".env").write_text("".join(f"{k}={v}\n" for k, v in env.items()))
 if os.environ.get("LLM_API_KEY"):
@@ -114,7 +114,7 @@ if not config.exists():  # keep a model chosen with `hermes portal` across resta
   enabled: [rocketchat-team-gateway]
 # The bot may use a terminal, inside this container only, and asks a person before anything dangerous.
 platform_toolsets:
-  rocketchat: [terminal]
+  rocketchat_team: [terminal]
 approvals:
   mode: manual
 memory:

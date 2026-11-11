@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.0.0
+
+Breaking: the plugin now has its own platform id and settings, so it no longer clashes with the `rocketchat-platform` catalog plugin, which registers `rocketchat` and reads `ROCKETCHAT_*`. Requested in the catalog review.
+
+- Platform id `rocketchat_team` (was `rocketchat`): config sections `platforms.rocketchat_team`, `platform_toolsets.rocketchat_team`, `platform_hints.rocketchat_team`, `display.platforms.rocketchat_team`, the top-level `rocketchat_team:` admin lists, and the cron target `deliver=rocketchat_team`
+- Settings renamed from `ROCKETCHAT_*` to `ROCKETCHAT_TEAM_*` (for example `ROCKETCHAT_TEAM_URL`, `ROCKETCHAT_TEAM_TOKEN`); the old names are no longer read
+- When only old `ROCKETCHAT_*` keys are set, startup logs an error that lists each one with its new name
+- The dedup state folder comes from Hermes's own `get_hermes_home()`, so each profile keeps its own folder under a multiplexed gateway
+- Sessions start fresh after the upgrade, because the session keys contain the platform id
+
+See "Upgrading from 1.x" in the README.
+
 ## 1.0.0
 
 First public release.

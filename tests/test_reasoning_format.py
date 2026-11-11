@@ -1,7 +1,7 @@
 """Tests for reasoning_format.py.
 
 The heuristic itself has no Rocket.Chat/Hermes/model awareness - the pattern
-and label are always supplied by the caller (see ROCKETCHAT_REASONING_LEAK_*
+and label are always supplied by the caller (see ROCKETCHAT_TEAM_REASONING_LEAK_*
 env vars in adapter.py). These tests exercise that contract directly with
 explicit patterns/labels, so they stay valid no matter which harness or model
 backend eventually calls this module in production. Uses the standard-library

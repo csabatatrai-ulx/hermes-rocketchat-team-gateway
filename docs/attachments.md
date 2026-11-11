@@ -15,6 +15,6 @@ Files on the mentioning message are downloaded with the bot's token and passed t
 
 When the model writes `MEDIA:/absolute/path`, Hermes core validates the path and calls the adapter's `send_document`, `send_image_file`, `send_voice` or `send_video`. The adapter uploads with `rooms.media` and `rooms.mediaConfirm`, into the reply's thread. Only the extension and size are logged.
 
-`ROCKETCHAT_OUTBOUND_FILES=false` disables this and removes the tag from the platform guidance. Rocket.Chat's own settings still apply: upload enabled, allowed types and size. A refusal is reported to the user with the server's reason.
+`ROCKETCHAT_TEAM_OUTBOUND_FILES=false` disables this and removes the tag from the platform guidance. Rocket.Chat's own settings still apply: upload enabled, allowed types and size. A refusal is reported to the user with the server's reason.
 
 `send_image` (a URL) is not implemented, on purpose: Rocket.Chat previews links itself, and downloading a foreign URL would be an SSRF surface.

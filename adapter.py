@@ -3,17 +3,17 @@
 Connects a Rocket.Chat bot account to Hermes with a Personal Access Token
 (the X-Auth-Token / X-User-Id header pair). Inbound messages arrive over the
 Realtime API (DDP WebSocket, ``ddp_transport_mixin.py``, the default) or,
-with ``ROCKETCHAT_TRANSPORT=webhook``, over a Rocket.Chat Outgoing Webhook
+with ``ROCKETCHAT_TEAM_TRANSPORT=webhook``, over a Rocket.Chat Outgoing Webhook
 pointed at this adapter's own small HTTP listener (``webhook_mixin.py``).
 Both feed the same ``inbound.classify_inbound`` decision chain. Replies always go
 over REST (``chat.postMessage``/``chat.update``): the DDP ``sendMessage``/
 ``updateMessage`` methods are gone in Rocket.Chat 9.0.
 
 Configuration: every setting is read and coerced in ``config.py``
-(``load_config``, precedence ``ROCKETCHAT_*`` env -> ``extra`` -> default, Hermes's rule);
+(``load_config``, precedence ``ROCKETCHAT_TEAM_*`` env -> ``extra`` -> default, Hermes's rule);
 ``docs/configuration.md`` lists every key with its default. The four
-required ones are ``ROCKETCHAT_URL``, ``ROCKETCHAT_TOKEN``,
-``ROCKETCHAT_USER_ID`` and ``ROCKETCHAT_BOT_USERNAME``. On/off settings
+required ones are ``ROCKETCHAT_TEAM_URL``, ``ROCKETCHAT_TEAM_TOKEN``,
+``ROCKETCHAT_TEAM_USER_ID`` and ``ROCKETCHAT_TEAM_BOT_USERNAME``. On/off settings
 accept true/1/yes/on and false/0/no/off; anything else keeps the setting's
 default, with a warning (``config.as_bool``).
 
@@ -21,7 +21,7 @@ Replies to a thread mention go into that thread: the turn's
 ``source.thread_id`` is the real Rocket.Chat ``tmid`` (sessions belong to Hermes
 core), and Hermes core passes it back as ``metadata["thread_id"]``.
 
-Before ever setting ``ROCKETCHAT_ALWAYS_FRESH_FINAL_STREAMING=true``, read
+Before ever setting ``ROCKETCHAT_TEAM_ALWAYS_FRESH_FINAL_STREAMING=true``, read
 ``prefers_fresh_final_streaming``'s docstring: it re-triggers a duplicate
 final delivery that the outbound dedup guard does not catch.
 """
@@ -33,11 +33,12 @@ import json
 import logging
 import os
 import re
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Set, Tuple
 
 
 from gateway.config import Platform, PlatformConfig
 from gateway.platforms._shared import env_is_connected, get_scoped_secret
+from hermes_constants import get_hermes_home
 from gateway.platforms.base import BasePlatformAdapter, SendResult
 from gateway.platforms.event import MessageEvent, MessageType
 
@@ -45,7 +46,9 @@ from .config import (
     DEFAULT_WEBHOOK_HOST,
     DEFAULT_WEBHOOK_PORT,
     MAX_MESSAGE_LENGTH,
+    PLATFORM_NAME,
     RocketChatConfig,
+    legacy_env_keys,
     load_config,
     shared_memory_risk,
 )
@@ -123,6 +126,9 @@ def _config_from_platform(config: PlatformConfig) -> RocketChatConfig:
         getattr(config, "extra", {}) or {},
         token=(getattr(config, "token", None) or ""),
         env=_ScopedEnv(),
+        # The active profile's home, as Hermes resolves it (profile-correct under a
+        # multiplexed gateway, unlike a raw HERMES_HOME read).
+        hermes_home=str(get_hermes_home()),
     )
 
 
@@ -170,7 +176,7 @@ class RocketChatAdapter(
     splits_long_messages = True  # send() chunks via truncate_message(MAX_MESSAGE_LENGTH)
 
     def __init__(self, config: PlatformConfig):
-        super().__init__(config, Platform("rocketchat"))
+        super().__init__(config, Platform(PLATFORM_NAME))
 
         # Every knob is read and coerced in config.py; this adapter keeps only
         # the resulting object plus a few flat aliases for the values used on
@@ -180,7 +186,7 @@ class RocketChatAdapter(
         self._warn_if_memory_is_shared(cfg)
         if cfg.allow_context_references:
             logger.warning(
-                "Rocket.Chat: ROCKETCHAT_ALLOW_CONTEXT_REFERENCES is on, so @file:, @folder:, @git: and @url: in a "
+                "Rocket.Chat: ROCKETCHAT_TEAM_ALLOW_CONTEXT_REFERENCES is on, so @file:, @folder:, @git: and @url: in a "
                 "message are expanded by Hermes before the model runs: anyone who can reach this bot can attach "
                 "files from its workspace or make it fetch a URL. Turn it off for a shared bot."
             )
@@ -237,7 +243,7 @@ class RocketChatAdapter(
         # reaction change reorders Rocket.Chat's message list, which looks like a jump
         # to someone watching a live channel.
         self._pending_ack: Dict[str, List[str]] = {}
-        # ROCKETCHAT_DM_ONLY: rooms where the "I only work in DMs" notice has already
+        # ROCKETCHAT_TEAM_DM_ONLY: rooms where the "I only work in DMs" notice has already
         # gone out (once per room per process, see webhook_mixin).
         self._dm_only_noticed_rooms: Set[str] = set()
         # chat_id -> the background task re-sending the DDP typing indicator
@@ -269,14 +275,14 @@ class RocketChatAdapter(
         await self._ddp_write_status("connecting")
         missing = self._cfg.missing_required()
         if missing:
-            # FAIL CLOSED: with transport=webhook an empty ROCKETCHAT_WEBHOOK_SECRET
+            # FAIL CLOSED: with transport=webhook an empty ROCKETCHAT_TEAM_WEBHOOK_SECRET
             # also counts as missing (see config.py missing_required). Without a secret
             # the listener would accept anyone, in any user's name.
             logger.error("Rocket.Chat: not configured, missing: %s", ", ".join(missing))
             if "webhook_secret" in missing:
                 logger.error(
-                    "Rocket.Chat: ROCKETCHAT_TRANSPORT=webhook requires "
-                    "ROCKETCHAT_WEBHOOK_SECRET (without it anyone who can reach "
+                    "Rocket.Chat: ROCKETCHAT_TEAM_TRANSPORT=webhook requires "
+                    "ROCKETCHAT_TEAM_WEBHOOK_SECRET (without it anyone who can reach "
                     "the listener could post as any user); not starting."
                 )
             return False
@@ -285,7 +291,7 @@ class RocketChatAdapter(
 
         me = await self._rest.me()
         if not me or "_id" not in me:
-            logger.error("Rocket.Chat: failed to authenticate - check ROCKETCHAT_TOKEN/ROCKETCHAT_USER_ID/ROCKETCHAT_URL")
+            logger.error("Rocket.Chat: failed to authenticate - check ROCKETCHAT_TEAM_TOKEN/ROCKETCHAT_TEAM_USER_ID/ROCKETCHAT_TEAM_URL")
             await self._ddp_write_status("auth_failed")
             await self._rest.close()
             return False
@@ -315,7 +321,7 @@ class RocketChatAdapter(
             else:
                 logger.warning("Rocket.Chat: Site_Url not readable, replies will carry no quote")
 
-        # ROCKETCHAT_TRANSPORT (see ddp_transport_mixin.py): either-or. The webhook HTTP
+        # ROCKETCHAT_TEAM_TRANSPORT (see ddp_transport_mixin.py): either-or. The webhook HTTP
         # listener starts only with an explicit "webhook", never with "ddp" (the
         # default).
         transport = self._cfg.transport
@@ -689,7 +695,7 @@ class RocketChatAdapter(
                 "Rocket.Chat: Hermes's built-in memory (%s) is on and several people can reach this bot, so "
                 "what one person tells it can appear in another person's answer. Set memory.memory_enabled "
                 "and memory.user_profile_enabled to false in config.yaml for a shared bot, or "
-                "ROCKETCHAT_SHARED_MEMORY_WARNING=false to silence this.",
+                "ROCKETCHAT_TEAM_SHARED_MEMORY_WARNING=false to silence this.",
                 ", ".join(stores),
             )
 
@@ -866,7 +872,7 @@ class RocketChatAdapter(
     ) -> bool:
         """Whether to ask the core for a fresh final message instead of an in-place edit.
 
-        Governed by ``ROCKETCHAT_ALWAYS_FRESH_FINAL_STREAMING`` (default **false**; do not
+        Governed by ``ROCKETCHAT_TEAM_ALWAYS_FRESH_FINAL_STREAMING`` (default **false**; do not
         flip it without reading the rest of this docstring).
 
         The flag was tried as a fix for a different bug: a mid-stream `edit_message` failure
@@ -877,7 +883,7 @@ class RocketChatAdapter(
         separate core defect in the fresh-final path: a finished answer can be delivered
         twice. Measured: a byte-identical duplicate about 3 s apart that the outbound dedup
         guard (`dedup.py`) did not catch, because the second delivery bypasses this adapter's
-        `send()` check, so ``ROCKETCHAT_OUTBOUND_DEDUP_TTL_SECONDS`` offers no protection. It
+        `send()` check, so ``ROCKETCHAT_TEAM_OUTBOUND_DEDUP_TTL_SECONDS`` offers no protection. It
         stays in place, off by default, in case a future core release fixes the duplicate. Do
         not re-enable it without re-testing that scenario.
         """
@@ -1094,10 +1100,10 @@ class RocketChatAdapter(
 # from the profile's .env. The same four required settings as
 # RocketChatConfig.REQUIRED_FIELDS.
 _is_connected = env_is_connected(
-    "ROCKETCHAT_TOKEN",
-    "ROCKETCHAT_URL",
-    "ROCKETCHAT_USER_ID",
-    "ROCKETCHAT_BOT_USERNAME",
+    "ROCKETCHAT_TEAM_TOKEN",
+    "ROCKETCHAT_TEAM_URL",
+    "ROCKETCHAT_TEAM_USER_ID",
+    "ROCKETCHAT_TEAM_BOT_USERNAME",
 )
 
 
@@ -1153,49 +1159,77 @@ def check_hermes_contract() -> List[str]:
 
 
 def _outbound_files_enabled() -> bool:
-    """ROCKETCHAT_OUTBOUND_FILES at registration (the platform guidance is fixed then).
+    """ROCKETCHAT_TEAM_OUTBOUND_FILES at registration (the platform guidance is fixed then).
         The key is readable only from env, so the guidance and the upload see the same value.
     """
     return load_config({}, env=_ScopedEnv()).outbound_files
 
 
+def _report_legacy_env(env: Mapping[str, str]) -> None:
+    """Name the pre-2.0 ``ROCKETCHAT_*`` keys that are set, with their new names.
+
+    Runs at registration because an install that still has only the old keys never gets an
+    adapter: ``is_connected`` looks for the new ones, so the platform is simply skipped.
+    The old names are also what ``rocketchat-platform`` reads, so the keys are an error only
+    when this plugin's own required keys are missing; otherwise they belong to that plugin.
+    """
+    legacy = legacy_env_keys(key for key in env if str(env.get(key) or "").strip())
+    if not legacy:
+        return
+    renames = ", ".join(f"{old} -> {new}" for old, new in legacy)
+    if load_config({}, env=env).missing_required():
+        logger.error(
+            "Rocket.Chat Team Gateway: since 2.0 the settings are ROCKETCHAT_TEAM_* and the "
+            "platform id is %s; ROCKETCHAT_* keys are no longer read, so this platform stays "
+            "off. Rename: %s. See 'Upgrading from 1.x' in the README.",
+            PLATFORM_NAME, renames,
+        )
+    else:
+        logger.info(
+            "Rocket.Chat Team Gateway: ignoring ROCKETCHAT_* keys (read by rocketchat-platform, "
+            "not this plugin): %s",
+            ", ".join(old for old, _ in legacy),
+        )
+
+
 def register(ctx) -> None:
     """Plugin entry point - called by the Hermes plugin system."""
     check_hermes_contract()
+    _report_legacy_env(_ScopedEnv())
     ctx.register_platform(
-        name="rocketchat",
+        name=PLATFORM_NAME,
         label="Rocket.Chat",
         adapter_factory=_build_adapter,
         check_fn=check_rocketchat_requirements,
         validate_config=validate_rocketchat_config,
         is_connected=_is_connected,
         required_env=[
-            "ROCKETCHAT_URL",
-            "ROCKETCHAT_TOKEN",
-            "ROCKETCHAT_USER_ID",
-            "ROCKETCHAT_BOT_USERNAME",
+            "ROCKETCHAT_TEAM_URL",
+            "ROCKETCHAT_TEAM_TOKEN",
+            "ROCKETCHAT_TEAM_USER_ID",
+            "ROCKETCHAT_TEAM_BOT_USERNAME",
         ],
         install_hint="pip install aiohttp",
         setup_fn=interactive_setup,
         standalone_sender_fn=standalone_send,
         dashboard_description="Connect Hermes to Rocket.Chat rooms and direct messages.",
         dashboard_env_vars=(
-            "ROCKETCHAT_URL",
-            "ROCKETCHAT_TOKEN",
-            "ROCKETCHAT_USER_ID",
-            "ROCKETCHAT_BOT_USERNAME",
-            "ROCKETCHAT_ALLOWED_USERS",
+            "ROCKETCHAT_TEAM_URL",
+            "ROCKETCHAT_TEAM_TOKEN",
+            "ROCKETCHAT_TEAM_USER_ID",
+            "ROCKETCHAT_TEAM_BOT_USERNAME",
+            "ROCKETCHAT_TEAM_ALLOWED_USERS",
         ),
-        allowed_users_env="ROCKETCHAT_ALLOWED_USERS",
-        allow_all_env="ROCKETCHAT_ALLOW_ALL_USERS",
-        # Hermes's cron ``deliver=rocketchat`` target (and the key ``/sethome`` writes);
+        allowed_users_env="ROCKETCHAT_TEAM_ALLOWED_USERS",
+        allow_all_env="ROCKETCHAT_TEAM_ALLOW_ALL_USERS",
+        # Hermes's cron ``deliver=rocketchat_team`` target (and the key ``/sethome`` writes);
         # without it cron's pre-check treats Rocket.Chat as an unknown platform.
-        cron_deliver_env_var="ROCKETCHAT_HOME_CHANNEL",
+        cron_deliver_env_var="ROCKETCHAT_TEAM_HOME_CHANNEL",
         max_message_length=MAX_MESSAGE_LENGTH,
         emoji="🚀",
         # The plugin's general Rocket.Chat guidance for the system prompt (see
         # prompt_guidance.py). Core uses this as the default platform hint; config
-        # ``platform_hints.rocketchat.append`` adds a deployment's own text AFTER it
+        # ``platform_hints.rocketchat_team.append`` adds a deployment's own text AFTER it
         # (replace: replaces it).
         platform_hint=build_platform_hint(_outbound_files_enabled()),
     )

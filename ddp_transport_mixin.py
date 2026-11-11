@@ -1,7 +1,7 @@
 """DDP (Rocket.Chat Realtime API) WebSocket transport (the default inbound path).
 
 The webhook-based path (``webhook_mixin.WebhookInboundMixin``) is the fallback. When
-``ROCKETCHAT_TRANSPORT`` is ``"ddp"`` (the default), this mixin opens a persistent
+``ROCKETCHAT_TEAM_TRANSPORT`` is ``"ddp"`` (the default), this mixin opens a persistent
 WebSocket to the same Rocket.Chat instance, logs in with the SAME Personal Access
 Token used for REST, subscribes ONCE to ``stream-room-messages`` on the
 ``__my_messages__`` virtual room (the same stream the web client uses: every room the
@@ -299,7 +299,7 @@ class DdpTransportMixin:
     """DDP WebSocket layer of :class:`~.adapter.RocketChatAdapter`.
 
     State is created lazily by :meth:`_ddp_start` (called from ``connect()``
-    when ``ROCKETCHAT_TRANSPORT`` includes ``"ddp"``), not ``__init__`` -
+    when ``ROCKETCHAT_TEAM_TRANSPORT`` includes ``"ddp"``), not ``__init__`` -
     keeps this mixin free of any constructor-ordering assumption relative to
     the other mixins.
     """
@@ -485,7 +485,7 @@ class DdpTransportMixin:
                 if self._ddp_is_permanent_auth_error(exc):
                     logger.error(
                         "Rocket.Chat: DDP permanent auth error (%s) - stopping "
-                        "reconnect attempts. Fix ROCKETCHAT_TOKEN/USER_ID and "
+                        "reconnect attempts. Fix ROCKETCHAT_TEAM_TOKEN/USER_ID and "
                         "restart the gateway to retry.",
                         exc,
                     )
@@ -661,7 +661,7 @@ class DdpTransportMixin:
         if not self._ddp_cursor_path():
             logger.warning(
                 "Rocket.Chat: startup catch-up skipped: no persistent state directory "
-                "(ROCKETCHAT_DEDUP_STATE_DIR is off), messages sent during a restart are not checked"
+                "(ROCKETCHAT_TEAM_DEDUP_STATE_DIR is off), messages sent during a restart are not checked"
             )
             return
         cursor = self._ddp_load_cursor()

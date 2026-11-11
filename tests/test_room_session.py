@@ -190,18 +190,18 @@ class _Fixture:
         case.webhook_mixin = load_mixin_module("webhook_mixin")
         case.adapter_module = load_mixin_module("adapter")
         base_env = {
-            "ROCKETCHAT_INBOUND_DEDUP_RETENTION_HOURS": "1000000",
+            "ROCKETCHAT_TEAM_INBOUND_DEDUP_RETENTION_HOURS": "1000000",
             # Pinned zone: the block's timestamps do not depend on the machine's zone.
-            "ROCKETCHAT_TIMEZONE": "Europe/Berlin",
+            "ROCKETCHAT_TEAM_TIMEZONE": "Europe/Berlin",
         }
         base_env.update(env or {})
         case.cfg = load_config({}, base_env)
-        # In production the plugin's registration takes up the Platform("rocketchat")
+        # In production the plugin's registration takes up the Platform("rocketchat_team")
         # member (core's _missing_); here with the same core call.
         try:
-            case.platform = Platform("rocketchat")
+            case.platform = Platform("rocketchat_team")
         except ValueError:
-            case.platform = Platform._add_pseudo_member("rocketchat")
+            case.platform = Platform._add_pseudo_member("rocketchat_team")
         case.SessionSource = SessionSource
         case.InboundDeduplicator = InboundDeduplicator
         case.OutboundDeduplicator = OutboundDeduplicator
@@ -326,8 +326,8 @@ class TestCoreSessionKeysAndPrefix(_Base):
                                          text=f"@{BOT} Hello"))
         self.assert_keys_match_the_core(instance)
         self.assertEqual(self.keys, [
-            "agent:main:rocketchat:channel:room1:uid-alice",
-            "agent:main:rocketchat:channel:room1:uid-bob",
+            "agent:main:rocketchat_team:channel:room1:uid-alice",
+            "agent:main:rocketchat_team:channel:room1:uid-bob",
         ])
         for event in instance.handle_message.events:
             self.assertIsNone(event.source.thread_id)
@@ -485,7 +485,7 @@ class TestPendingBlock(_Base):
 
 
 class TestUnverifiedSender(_Base):
-    ENV = {"ROCKETCHAT_ALLOWED_USERS": "alice"}
+    ENV = {"ROCKETCHAT_TEAM_ALLOWED_USERS": "alice"}
 
     def test_lines_of_senders_off_the_allowlist_are_marked(self):
         instance = self.instance(_fake_rest(room=list(SCENARIO)))

@@ -23,6 +23,8 @@ from config import (  # noqa: E402
     as_list,
     _norm_reaction,
     _normalize_transport,
+    PLATFORM_NAME,
+    legacy_env_keys,
     load_config,
 )
 from whoami import DEFAULT_WHOAMI_COMMAND  # noqa: E402
@@ -37,10 +39,10 @@ from history import (  # noqa: E402
 from builtin_commands import DEFAULT_ALLOWED_BUILTIN_COMMANDS  # noqa: E402
 
 MINIMAL_ENV = {
-    "ROCKETCHAT_URL": "http://localhost:3000",
-    "ROCKETCHAT_TOKEN": "tok",
-    "ROCKETCHAT_USER_ID": "uid",
-    "ROCKETCHAT_BOT_USERNAME": "Hermes",
+    "ROCKETCHAT_TEAM_URL": "http://localhost:3000",
+    "ROCKETCHAT_TEAM_TOKEN": "tok",
+    "ROCKETCHAT_TEAM_USER_ID": "uid",
+    "ROCKETCHAT_TEAM_BOT_USERNAME": "Hermes",
 }
 
 
@@ -63,11 +65,11 @@ class TestAsBool(unittest.TestCase):
         # A typo can never flip a switch: in both directions the default stays and the
         # warning names the key.
         with self.assertLogs("config", level="WARNING") as logs:
-            self.assertTrue(as_bool("flase", default=True, name="ROCKETCHAT_X"))
-            self.assertFalse(as_bool("yse", default=False, name="ROCKETCHAT_Y"))
-        self.assertIn("ROCKETCHAT_X", logs.output[0])
+            self.assertTrue(as_bool("flase", default=True, name="ROCKETCHAT_TEAM_X"))
+            self.assertFalse(as_bool("yse", default=False, name="ROCKETCHAT_TEAM_Y"))
+        self.assertIn("ROCKETCHAT_TEAM_X", logs.output[0])
         self.assertIn("flase", logs.output[0])
-        self.assertIn("ROCKETCHAT_Y", logs.output[1])
+        self.assertIn("ROCKETCHAT_TEAM_Y", logs.output[1])
 
     def test_same_value_sets_as_builtin_command_allowlist(self):
         # builtin_commands.py keeps its own set (circular import); the two must not
@@ -80,32 +82,32 @@ class TestAsBool(unittest.TestCase):
 
 class TestLoadConfigFlags(unittest.TestCase):
     def test_off_disables_a_default_true_flag(self):
-        cfg = load_config({}, dict(MINIMAL_ENV, ROCKETCHAT_REQUIRE_MENTION="off"))
+        cfg = load_config({}, dict(MINIMAL_ENV, ROCKETCHAT_TEAM_REQUIRE_MENTION="off"))
         self.assertFalse(cfg.require_mention)
 
     def test_off_keeps_allow_all_users_disabled(self):
         # "off" must never switch this on.
-        cfg = load_config({}, dict(MINIMAL_ENV, ROCKETCHAT_ALLOW_ALL_USERS="off"))
+        cfg = load_config({}, dict(MINIMAL_ENV, ROCKETCHAT_TEAM_ALLOW_ALL_USERS="off"))
         self.assertFalse(cfg.allow_all_users)
 
     def test_typo_on_allow_all_users_stays_disabled(self):
         with self.assertLogs("config", level="WARNING") as logs:
-            cfg = load_config({}, dict(MINIMAL_ENV, ROCKETCHAT_ALLOW_ALL_USERS="ture"))
+            cfg = load_config({}, dict(MINIMAL_ENV, ROCKETCHAT_TEAM_ALLOW_ALL_USERS="ture"))
         self.assertFalse(cfg.allow_all_users)
-        self.assertIn("ROCKETCHAT_ALLOW_ALL_USERS", "".join(logs.output))
+        self.assertIn("ROCKETCHAT_TEAM_ALLOW_ALL_USERS", "".join(logs.output))
 
     def test_dm_only_and_startup_greeting_defaults(self):
         # For a personal Hermes (DM only, home channel without a greeting).
         cfg = load_config({}, dict(MINIMAL_ENV))
         self.assertFalse(cfg.dm_only)
         self.assertTrue(cfg.startup_greeting)
-        cfg = load_config({}, dict(MINIMAL_ENV, ROCKETCHAT_DM_ONLY="true",
-                                   ROCKETCHAT_STARTUP_GREETING="false"))
+        cfg = load_config({}, dict(MINIMAL_ENV, ROCKETCHAT_TEAM_DM_ONLY="true",
+                                   ROCKETCHAT_TEAM_STARTUP_GREETING="false"))
         self.assertTrue(cfg.dm_only)
         self.assertFalse(cfg.startup_greeting)
 
     def test_on_enables_a_default_false_flag(self):
-        cfg = load_config({}, dict(MINIMAL_ENV, ROCKETCHAT_ALLOW_ALL_USERS="on"))
+        cfg = load_config({}, dict(MINIMAL_ENV, ROCKETCHAT_TEAM_ALLOW_ALL_USERS="on"))
         self.assertTrue(cfg.allow_all_users)
 
     def test_extra_bool_value_is_accepted(self):
@@ -121,16 +123,16 @@ class TestInboundDedupRetention(unittest.TestCase):
         self.assertEqual(load_config({}, dict(MINIMAL_ENV)).inbound_dedup_retention_hours, 72)
 
     def test_env_value(self):
-        cfg = load_config({}, dict(MINIMAL_ENV, ROCKETCHAT_INBOUND_DEDUP_RETENTION_HOURS="24"))
+        cfg = load_config({}, dict(MINIMAL_ENV, ROCKETCHAT_TEAM_INBOUND_DEDUP_RETENTION_HOURS="24"))
         self.assertEqual(cfg.inbound_dedup_retention_hours, 24)
-        cfg = load_config({}, dict(MINIMAL_ENV, ROCKETCHAT_INBOUND_DEDUP_RETENTION_HOURS="0.5"))
+        cfg = load_config({}, dict(MINIMAL_ENV, ROCKETCHAT_TEAM_INBOUND_DEDUP_RETENTION_HOURS="0.5"))
         self.assertEqual(cfg.inbound_dedup_retention_hours, 0.5)
 
     def test_invalid_or_non_positive_falls_back_to_default(self):
         for raw in ("0", "-5", "abc", "nan", "inf"):
             with self.assertLogs("config", level="WARNING"):
                 cfg = load_config(
-                    {}, dict(MINIMAL_ENV, ROCKETCHAT_INBOUND_DEDUP_RETENTION_HOURS=raw)
+                    {}, dict(MINIMAL_ENV, ROCKETCHAT_TEAM_INBOUND_DEDUP_RETENTION_HOURS=raw)
                 )
             self.assertEqual(cfg.inbound_dedup_retention_hours, 72, raw)
 
@@ -177,9 +179,9 @@ class TestNormReaction(unittest.TestCase):
             self.assertEqual(_norm_reaction(raw), "", raw)
 
     def test_default_env_value(self):
-        cfg = load_config({}, {"ROCKETCHAT_ACK_REACTION": ":+1:"})
+        cfg = load_config({}, {"ROCKETCHAT_TEAM_ACK_REACTION": ":+1:"})
         self.assertEqual(cfg.ack_reaction, "+1")
-        cfg_off = load_config({}, {"ROCKETCHAT_ACK_REACTION": "off"})
+        cfg_off = load_config({}, {"ROCKETCHAT_TEAM_ACK_REACTION": "off"})
         self.assertEqual(cfg_off.ack_reaction, "")
         cfg_default = load_config({}, {})
         self.assertEqual(cfg_default.ack_reaction, "eyes")
@@ -200,9 +202,9 @@ class TestPrecedence(unittest.TestCase):
     def test_extra_is_used_when_env_is_absent_or_empty(self):
         # An .env may hold empty values to mean "unset"; an empty
         # string must not shadow the YAML value.
-        env = {k: v for k, v in MINIMAL_ENV.items() if k != "ROCKETCHAT_BOT_USERNAME"}
+        env = {k: v for k, v in MINIMAL_ENV.items() if k != "ROCKETCHAT_TEAM_BOT_USERNAME"}
         self.assertEqual(load_config({"bot_username": "Hermes-Beta"}, env).bot_username, "Hermes-Beta")
-        env["ROCKETCHAT_BOT_USERNAME"] = ""
+        env["ROCKETCHAT_TEAM_BOT_USERNAME"] = ""
         self.assertEqual(load_config({"bot_username": "Hermes-Beta"}, env).bot_username, "Hermes-Beta")
 
     def test_empty_extra_falls_through_to_env(self):
@@ -210,15 +212,15 @@ class TestPrecedence(unittest.TestCase):
         self.assertEqual(cfg.bot_username, "Hermes")
 
     def test_empty_env_falls_through_to_default(self):
-        env = dict(MINIMAL_ENV, ROCKETCHAT_WEBHOOK_HOST="")
+        env = dict(MINIMAL_ENV, ROCKETCHAT_TEAM_WEBHOOK_HOST="")
         self.assertEqual(load_config({}, env).webhook_host, DEFAULT_WEBHOOK_HOST)
 
     def test_token_argument_is_the_yaml_level_fallback(self):
         # The harness carries the YAML token on the config object, not in
         # extra; the env key still wins (env > YAML).
-        env = {k: v for k, v in MINIMAL_ENV.items() if k != "ROCKETCHAT_TOKEN"}
+        env = {k: v for k, v in MINIMAL_ENV.items() if k != "ROCKETCHAT_TEAM_TOKEN"}
         self.assertEqual(load_config({}, env, token="from-harness").token, "from-harness")
-        cfg = load_config({}, dict(MINIMAL_ENV, ROCKETCHAT_TOKEN="from-env"), token="from-harness")
+        cfg = load_config({}, dict(MINIMAL_ENV, ROCKETCHAT_TEAM_TOKEN="from-env"), token="from-harness")
         self.assertEqual(cfg.token, "from-env")
 
     def test_token_falls_back_to_env(self):
@@ -245,12 +247,12 @@ class TestDefaults(unittest.TestCase):
         self.assertEqual(cfg.history_token_budget, 0)
 
     def test_url_trailing_slash_is_stripped(self):
-        env = dict(MINIMAL_ENV, ROCKETCHAT_URL="http://localhost:3000///")
+        env = dict(MINIMAL_ENV, ROCKETCHAT_TEAM_URL="http://localhost:3000///")
         self.assertEqual(load_config({}, env).base_url, "http://localhost:3000")
 
 
 class TestTransportConfig(unittest.TestCase):
-    """ROCKETCHAT_TRANSPORT; see RocketChatConfig.transport."""
+    """ROCKETCHAT_TEAM_TRANSPORT; see RocketChatConfig.transport."""
 
     def test_webhook_is_accepted(self):
         self.assertEqual(_normalize_transport("webhook"), "webhook")
@@ -272,7 +274,7 @@ class TestTransportConfig(unittest.TestCase):
         self.assertEqual(load_config({}, MINIMAL_ENV).transport, "ddp")
 
     def test_load_config_reads_rocketchat_transport(self):
-        env = dict(MINIMAL_ENV, ROCKETCHAT_TRANSPORT="webhook")
+        env = dict(MINIMAL_ENV, ROCKETCHAT_TEAM_TRANSPORT="webhook")
         self.assertEqual(load_config({}, env).transport, "webhook")
 
 
@@ -280,12 +282,12 @@ class TestDeploymentSettings(unittest.TestCase):
     """Non-default values an operator is expected to set (see docs/configuration.md)."""
 
     def test_dedup_can_be_disabled(self):
-        env = dict(MINIMAL_ENV, ROCKETCHAT_OUTBOUND_DEDUP_TTL_SECONDS="0")
+        env = dict(MINIMAL_ENV, ROCKETCHAT_TEAM_OUTBOUND_DEDUP_TTL_SECONDS="0")
         self.assertEqual(load_config({}, env).outbound_dedup_ttl_seconds, 0.0)
 
     def test_always_fresh_final_streaming_can_be_enabled(self):
         # Off by default (see config.py comment) - explicit opt-in only.
-        env = dict(MINIMAL_ENV, ROCKETCHAT_ALWAYS_FRESH_FINAL_STREAMING="true")
+        env = dict(MINIMAL_ENV, ROCKETCHAT_TEAM_ALWAYS_FRESH_FINAL_STREAMING="true")
         self.assertTrue(load_config({}, env).always_fresh_final_streaming)
 
 
@@ -311,12 +313,42 @@ class TestDedupStateDirConfig(unittest.TestCase):
 
     def test_off_word_disables_it(self):
         for value in ("off", "none", "OFF", "disabled", "false", "0"):
-            env = dict(MINIMAL_ENV, ROCKETCHAT_DEDUP_STATE_DIR=value)
+            env = dict(MINIMAL_ENV, ROCKETCHAT_TEAM_DEDUP_STATE_DIR=value)
             self.assertEqual(load_config({}, env).dedup_state_dir, "", msg=value)
 
     def test_explicit_value_used_verbatim(self):
-        env = dict(MINIMAL_ENV, ROCKETCHAT_DEDUP_STATE_DIR="/custom/dedup-dir")
+        env = dict(MINIMAL_ENV, ROCKETCHAT_TEAM_DEDUP_STATE_DIR="/custom/dedup-dir")
         self.assertEqual(load_config({}, env).dedup_state_dir, "/custom/dedup-dir")
+
+    def test_hermes_home_from_hermes_wins_over_the_env(self):
+        # The adapter passes hermes_constants.get_hermes_home(), which resolves the active
+        # profile even when HERMES_HOME in the process env belongs to another one.
+        env = dict(MINIMAL_ENV, HERMES_HOME="/home/x/.hermes")
+        cfg = load_config({}, env, hermes_home="/home/x/.hermes/profiles/team")
+        self.assertEqual(cfg.dedup_state_dir, "/home/x/.hermes/profiles/team/rocketchat-plugin-dedup")
+
+
+class TestPlatformIdAndLegacyKeys(unittest.TestCase):
+    """2.0: own platform id and ROCKETCHAT_TEAM_* keys, distinct from rocketchat-platform."""
+
+    def test_platform_id_is_not_rocketchat(self):
+        self.assertEqual(PLATFORM_NAME, "rocketchat_team")
+
+    def test_old_keys_are_not_read(self):
+        env = {"ROCKETCHAT_URL": "https://chat.example.com", "ROCKETCHAT_TOKEN": "t",
+               "ROCKETCHAT_USER_ID": "u", "ROCKETCHAT_BOT_USERNAME": "hermes"}
+        self.assertEqual(
+            load_config({}, env).missing_required(),
+            ["base_url", "token", "user_id", "bot_username"],
+        )
+
+    def test_legacy_env_keys_pairs_old_with_new_names(self):
+        keys = ["ROCKETCHAT_URL", "ROCKETCHAT_TEAM_TOKEN", "PATH", "ROCKETCHAT_ALLOWED_USERS"]
+        self.assertEqual(
+            legacy_env_keys(keys),
+            [("ROCKETCHAT_ALLOWED_USERS", "ROCKETCHAT_TEAM_ALLOWED_USERS"),
+             ("ROCKETCHAT_URL", "ROCKETCHAT_TEAM_URL")],
+        )
 
 
 class TestDdpCatchupConfig(unittest.TestCase):
@@ -324,11 +356,11 @@ class TestDdpCatchupConfig(unittest.TestCase):
         self.assertEqual(load_config({}, MINIMAL_ENV).ddp_catchup_max_seconds, 600)
 
     def test_zero_disables(self):
-        env = dict(MINIMAL_ENV, ROCKETCHAT_DDP_CATCHUP_MAX_SECONDS="0")
+        env = dict(MINIMAL_ENV, ROCKETCHAT_TEAM_DDP_CATCHUP_MAX_SECONDS="0")
         self.assertEqual(load_config({}, env).ddp_catchup_max_seconds, 0)
 
     def test_custom_value(self):
-        env = dict(MINIMAL_ENV, ROCKETCHAT_DDP_CATCHUP_MAX_SECONDS="120")
+        env = dict(MINIMAL_ENV, ROCKETCHAT_TEAM_DDP_CATCHUP_MAX_SECONDS="120")
         self.assertEqual(load_config({}, env).ddp_catchup_max_seconds, 120)
 
 
@@ -339,11 +371,11 @@ class TestWhoamiConfig(unittest.TestCase):
         self.assertEqual(cfg.whoami_command, DEFAULT_WHOAMI_COMMAND)
 
     def test_can_be_disabled(self):
-        env = dict(MINIMAL_ENV, ROCKETCHAT_WHOAMI_ENABLED="false")
+        env = dict(MINIMAL_ENV, ROCKETCHAT_TEAM_WHOAMI_ENABLED="false")
         self.assertFalse(load_config({}, env).whoami_enabled)
 
     def test_custom_command(self):
-        env = dict(MINIMAL_ENV, ROCKETCHAT_WHOAMI_COMMAND="/ki-vagyok")
+        env = dict(MINIMAL_ENV, ROCKETCHAT_TEAM_WHOAMI_COMMAND="/ki-vagyok")
         self.assertEqual(load_config({}, env).whoami_command, "/ki-vagyok")
 
 
@@ -359,32 +391,32 @@ class TestHistoryConfig(unittest.TestCase):
         self.assertEqual(cfg.history_token_budget, 0)
 
     def test_limit_zero_disables(self):
-        self.assertEqual(self.cfg(ROCKETCHAT_HISTORY_LIMIT="0").history_limit, 0)
-        self.assertEqual(self.cfg(ROCKETCHAT_HISTORY_LIMIT="0").history_min_messages, 0)
+        self.assertEqual(self.cfg(ROCKETCHAT_TEAM_HISTORY_LIMIT="0").history_limit, 0)
+        self.assertEqual(self.cfg(ROCKETCHAT_TEAM_HISTORY_LIMIT="0").history_min_messages, 0)
 
     def test_limit_is_capped_at_100(self):
         with self.assertLogs(level="WARNING"):
-            self.assertEqual(self.cfg(ROCKETCHAT_HISTORY_LIMIT="500").history_limit, 100)
+            self.assertEqual(self.cfg(ROCKETCHAT_TEAM_HISTORY_LIMIT="500").history_limit, 100)
 
     def test_bad_or_negative_limit_keeps_the_default(self):
         for raw in ("sok", "-3"):
             with self.assertLogs(level="WARNING"):
-                self.assertEqual(self.cfg(ROCKETCHAT_HISTORY_LIMIT=raw).history_limit, 50)
+                self.assertEqual(self.cfg(ROCKETCHAT_TEAM_HISTORY_LIMIT=raw).history_limit, 50)
 
     def test_min_messages_is_at_most_the_limit(self):
-        cfg = self.cfg(ROCKETCHAT_HISTORY_LIMIT="10", ROCKETCHAT_HISTORY_MIN_MESSAGES="30")
+        cfg = self.cfg(ROCKETCHAT_TEAM_HISTORY_LIMIT="10", ROCKETCHAT_TEAM_HISTORY_MIN_MESSAGES="30")
         self.assertEqual((cfg.history_limit, cfg.history_min_messages), (10, 10))
-        self.assertEqual(self.cfg(ROCKETCHAT_HISTORY_MIN_MESSAGES="0").history_min_messages, 0)
+        self.assertEqual(self.cfg(ROCKETCHAT_TEAM_HISTORY_MIN_MESSAGES="0").history_min_messages, 0)
         with self.assertLogs(level="WARNING"):
-            self.assertEqual(self.cfg(ROCKETCHAT_HISTORY_MIN_MESSAGES="x").history_min_messages, 20)
+            self.assertEqual(self.cfg(ROCKETCHAT_TEAM_HISTORY_MIN_MESSAGES="x").history_min_messages, 20)
 
     def test_env_wins_over_extra(self):
-        cfg = load_config({"history_limit": "5"}, dict(MINIMAL_ENV, ROCKETCHAT_HISTORY_LIMIT="40"))
+        cfg = load_config({"history_limit": "5"}, dict(MINIMAL_ENV, ROCKETCHAT_TEAM_HISTORY_LIMIT="40"))
         self.assertEqual(cfg.history_limit, 40)
 
     def test_token_budget(self):
-        self.assertEqual(self.cfg(ROCKETCHAT_HISTORY_TOKEN_BUDGET="5000").history_token_budget, 5000)
-        self.assertEqual(self.cfg(ROCKETCHAT_HISTORY_TOKEN_BUDGET="-1").history_token_budget, 0)
+        self.assertEqual(self.cfg(ROCKETCHAT_TEAM_HISTORY_TOKEN_BUDGET="5000").history_token_budget, 5000)
+        self.assertEqual(self.cfg(ROCKETCHAT_TEAM_HISTORY_TOKEN_BUDGET="-1").history_token_budget, 0)
 
 
 class TestBuiltinCommandsConfig(unittest.TestCase):
@@ -398,7 +430,7 @@ class TestBuiltinCommandsConfig(unittest.TestCase):
         )
 
     def test_env_flag_reaches_the_config_object(self):
-        env = dict(MINIMAL_ENV, ROCKETCHAT_ALLOW_BUILTIN_STATUS="true")
+        env = dict(MINIMAL_ENV, ROCKETCHAT_TEAM_ALLOW_BUILTIN_STATUS="true")
         self.assertIn("status", load_config({}, env).allowed_builtin_commands)
 
     def test_high_risk_command_stays_off_through_the_full_pipeline(self):
@@ -413,7 +445,7 @@ class TestRequiredFields(unittest.TestCase):
 
     def test_names_what_is_missing(self):
         # "not configured" without saying WHICH field costs someone an hour.
-        cfg = load_config({}, {"ROCKETCHAT_URL": "http://x"})
+        cfg = load_config({}, {"ROCKETCHAT_TEAM_URL": "http://x"})
         self.assertEqual(cfg.missing_required(), ["token", "user_id", "bot_username"])
 
     def test_empty_config_is_incomplete(self):
@@ -421,19 +453,19 @@ class TestRequiredFields(unittest.TestCase):
 
     def test_webhook_transport_requires_the_secret(self):
         # FAIL CLOSED: without a secret the webhook listener would accept anyone.
-        env = dict(MINIMAL_ENV, ROCKETCHAT_TRANSPORT="webhook")
+        env = dict(MINIMAL_ENV, ROCKETCHAT_TEAM_TRANSPORT="webhook")
         cfg = load_config({}, env)
         self.assertEqual(cfg.missing_required(), ["webhook_secret"])
         self.assertFalse(cfg.is_complete)
 
     def test_webhook_transport_with_a_secret_is_complete(self):
         env = dict(
-            MINIMAL_ENV, ROCKETCHAT_TRANSPORT="webhook", ROCKETCHAT_WEBHOOK_SECRET="s3cret"
+            MINIMAL_ENV, ROCKETCHAT_TEAM_TRANSPORT="webhook", ROCKETCHAT_TEAM_WEBHOOK_SECRET="s3cret"
         )
         self.assertTrue(load_config({}, env).is_complete)
 
     def test_ddp_transport_does_not_need_the_secret(self):
-        env = dict(MINIMAL_ENV, ROCKETCHAT_TRANSPORT="ddp")
+        env = dict(MINIMAL_ENV, ROCKETCHAT_TEAM_TRANSPORT="ddp")
         self.assertEqual(load_config({}, env).missing_required(), [])
 
 
@@ -455,7 +487,7 @@ class TestOutboundFilesSwitch(unittest.TestCase):
     # Env only (the guidance sees the same value at registration).
     def test_default_on_env_off_extra_ignored(self):
         self.assertTrue(load_config({}, MINIMAL_ENV).outbound_files)
-        self.assertFalse(load_config({}, dict(MINIMAL_ENV, ROCKETCHAT_OUTBOUND_FILES="false")).outbound_files)
+        self.assertFalse(load_config({}, dict(MINIMAL_ENV, ROCKETCHAT_TEAM_OUTBOUND_FILES="false")).outbound_files)
         self.assertTrue(load_config({"outbound_files": "false"}, MINIMAL_ENV).outbound_files)
 
 
@@ -474,9 +506,9 @@ class StartupCatchupConfigTests(unittest.TestCase):
         
     def test_values_from_env(self):
         cfg = load_config({}, dict(
-            MINIMAL_ENV, ROCKETCHAT_STARTUP_CATCHUP_MODE="Replay",
-            ROCKETCHAT_STARTUP_CATCHUP_MAX_SECONDS="120",
-            ROCKETCHAT_STARTUP_CATCHUP_MAX_DISPATCHES="3",
+            MINIMAL_ENV, ROCKETCHAT_TEAM_STARTUP_CATCHUP_MODE="Replay",
+            ROCKETCHAT_TEAM_STARTUP_CATCHUP_MAX_SECONDS="120",
+            ROCKETCHAT_TEAM_STARTUP_CATCHUP_MAX_DISPATCHES="3",
         ))
         self.assertEqual(
             (cfg.startup_catchup_mode, cfg.startup_catchup_max_seconds,
@@ -487,15 +519,15 @@ class StartupCatchupConfigTests(unittest.TestCase):
     def test_unknown_mode_falls_back_with_a_warning(self):
         with self.assertLogs("config", level="WARNING") as logs:
             cfg = load_config({}, dict(
-                MINIMAL_ENV, ROCKETCHAT_STARTUP_CATCHUP_MODE="always",
+                MINIMAL_ENV, ROCKETCHAT_TEAM_STARTUP_CATCHUP_MODE="always",
             ))
         self.assertEqual(cfg.startup_catchup_mode, "notice")
         self.assertEqual(len(logs.output), 1)
 
     def test_negative_window_disables_and_dispatch_cap_is_at_least_one(self):
         cfg = load_config({}, dict(
-            MINIMAL_ENV, ROCKETCHAT_STARTUP_CATCHUP_MAX_SECONDS="-5",
-            ROCKETCHAT_STARTUP_CATCHUP_MAX_DISPATCHES="0",
+            MINIMAL_ENV, ROCKETCHAT_TEAM_STARTUP_CATCHUP_MAX_SECONDS="-5",
+            ROCKETCHAT_TEAM_STARTUP_CATCHUP_MAX_DISPATCHES="0",
         ))
         self.assertEqual((cfg.startup_catchup_max_seconds, cfg.startup_catchup_max_dispatches), (0, 1))
 
@@ -517,12 +549,12 @@ class SharedMemoryRiskTests(unittest.TestCase):
         self.assertEqual(shared_memory_risk({"memory_enabled": False}, self.cfg()), ("user_profile_enabled",))
 
     def test_a_private_dm_only_bot_for_one_person_is_quiet(self):
-        cfg = self.cfg(ROCKETCHAT_DM_ONLY="true", ROCKETCHAT_ALLOWED_USERS="u1")
+        cfg = self.cfg(ROCKETCHAT_TEAM_DM_ONLY="true", ROCKETCHAT_TEAM_ALLOWED_USERS="u1")
         self.assertEqual(shared_memory_risk(None, cfg), ())
-        cfg = self.cfg(ROCKETCHAT_DM_ONLY="true", ROCKETCHAT_ALLOWED_USERS="u1,u2")
+        cfg = self.cfg(ROCKETCHAT_TEAM_DM_ONLY="true", ROCKETCHAT_TEAM_ALLOWED_USERS="u1,u2")
         self.assertTrue(shared_memory_risk(None, cfg))
 
     def test_the_warning_can_be_switched_off(self):
         self.assertTrue(self.cfg().shared_memory_warning)
-        self.assertFalse(self.cfg(ROCKETCHAT_SHARED_MEMORY_WARNING="false").shared_memory_warning)
+        self.assertFalse(self.cfg(ROCKETCHAT_TEAM_SHARED_MEMORY_WARNING="false").shared_memory_warning)
 

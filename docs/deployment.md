@@ -6,12 +6,12 @@ Hermes defaults fit one person at a terminal. A plugin cannot change them, so se
 
 ```yaml
 platform_toolsets:
-  rocketchat:            # explicit: only what this bot needs
+  rocketchat_team:       # explicit: only what this bot needs
     - my-mcp-server
 display:
   busy_input_mode: queue # a second message waits instead of interrupting
   platforms:
-    rocketchat:
+    rocketchat_team:
       tool_progress: new
       interim_assistant_messages: false
       long_running_notifications: false   # the typing indicator is the signal
@@ -23,18 +23,18 @@ thread_sessions_per_user: true            # per-person sessions in threads too
 memory:
   memory_enabled: false                   # shared across all users otherwise
   user_profile_enabled: false
-rocketchat:
+rocketchat_team:
   group_allow_admin_from: [<admin user id>]
   allow_admin_from: [<admin user id>]
 ```
 
 **Set `approvals.mode: manual` on a shared bot.** Hermes's default, `smart`, lets a helper model approve a flagged command it considers safe, and then no person is asked and no button appears. In testing it approved an `rm -rf` of a directory by itself. Use `smart` only if you accept that decision being made by a model.
 
-For deployment-specific tool guidance, use `platform_hints.rocketchat.append` rather than changing the plugin.
+For deployment-specific tool guidance, use `platform_hints.rocketchat_team.append` rather than changing the plugin.
 
 ## A personal assistant
 
-The same plugin runs as one person's assistant in their DMs, by configuration only: `ROCKETCHAT_DM_ONLY=true`, the owner alone in `ROCKETCHAT_ALLOWED_USERS` and `ROCKETCHAT_ALLOW_BUILTIN_PRESET=personal`, with one Hermes instance and one bot account per person. The settings, several assistants on one server and a checklist are in [Personal assistant](personal-assistant.md).
+The same plugin runs as one person's assistant in their DMs, by configuration only: `ROCKETCHAT_TEAM_DM_ONLY=true`, the owner alone in `ROCKETCHAT_TEAM_ALLOWED_USERS` and `ROCKETCHAT_TEAM_ALLOW_BUILTIN_PRESET=personal`, with one Hermes instance and one bot account per person. The settings, several assistants on one server and a checklist are in [Personal assistant](personal-assistant.md).
 
 ## Rocket.Chat side
 

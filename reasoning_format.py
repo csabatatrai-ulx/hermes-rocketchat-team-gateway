@@ -3,7 +3,7 @@
 Some OpenAI-compatible backends return chain-of-thought as plain text in front
 of the reply instead of inside ``<think>`` tags or a reasoning field, so
 Hermes's think-stripper never sees it. This layer is off by default and
-enabled with ``ROCKETCHAT_REASONING_LEAK_FORMATTING=true``; it should stay off
+enabled with ``ROCKETCHAT_TEAM_REASONING_LEAK_FORMATTING=true``; it should stay off
 for models that do not leak, because an ordinary answer starting "Based on ..."
 would be a false positive.
 
@@ -11,7 +11,7 @@ If the first paragraph reads like self-narrated reasoning and a real answer
 follows, ``drop`` mode removes the preamble and ``wrap`` mode renders it as a
 ``> 💭`` aside. The output is standard ``>`` markdown, nothing here is specific
 to Rocket.Chat. The switch and the pattern are supplied by the caller (the
-``ROCKETCHAT_REASONING_LEAK_*`` settings).
+``ROCKETCHAT_TEAM_REASONING_LEAK_*`` settings).
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ from __future__ import annotations
 import re
 
 # A reasonable default, not a universal truth about how models leak reasoning. Override
-# it with ROCKETCHAT_REASONING_LEAK_PATTERN when a backend's leak style does not match.
+# it with ROCKETCHAT_TEAM_REASONING_LEAK_PATTERN when a backend's leak style does not match.
 DEFAULT_REASONING_LEAD_PATTERN = (
     r"^(the user|i should|i need to|let me|thinking process|"
     r"analyz(e|ing)|based on|the message|this (is|appears))"
