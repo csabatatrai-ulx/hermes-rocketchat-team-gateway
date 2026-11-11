@@ -31,6 +31,17 @@ jobs:
       - name: Build, failing on any warning or broken link
         run: mkdocs build --strict --site-dir site
 
+      # The demo videos live as v1.0.0 release assets, not in the repository, so a plugin install stays small.
+      # GitHub serves release assets as downloads from another domain, which browsers will not play inline,
+      # so the site serves its own copies.
+      - name: Add the demo videos to the site
+        if: github.event_name != 'pull_request'
+        run: |
+          mkdir -p site/videos
+          for f in demo.mp4 chatops-demo.mp4; do
+            curl -fsSL -o "site/videos/$f" "https://github.com/${{ github.repository }}/releases/download/v1.0.0/$f"
+          done
+
       # GitHub Pages on a free plan needs a public repository; until then the site is only built.
       - name: Upload the site for GitHub Pages
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.event.repository.visibility == 'public'
