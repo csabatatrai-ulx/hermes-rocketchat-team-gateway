@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from _adapter_test_support import HERMES_AGENT_AVAILABLE, SKIP_REASON  # noqa: E402
 from context_refs import neutralize_context_references  # noqa: E402
 
-ZWSP = "​"
+ZWSP = "\u200b"
 
 ATTACKS = [
     "@file:secrets.yaml",

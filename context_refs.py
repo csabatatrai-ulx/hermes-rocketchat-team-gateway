@@ -26,7 +26,7 @@ import re
 _REFERENCE_START = re.compile(
     r"(?<![\w/])@(?=(?:diff|staged)\b|[A-Za-z][A-Za-z0-9_-]*:\S)"
 )
-_ZERO_WIDTH_SPACE = "​"
+_ZERO_WIDTH_SPACE = "\u200b"
 
 
 def neutralize_context_references(text: str) -> str:
