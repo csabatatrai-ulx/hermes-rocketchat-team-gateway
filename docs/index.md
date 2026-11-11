@@ -40,7 +40,7 @@ hide:
 
 <div class="video-frame">
   <video controls preload="metadata" playsinline poster="images/demo-poster.jpg">
-    <source src="https://github.com/user-attachments/assets/3a8107bc-dd71-4a02-9eed-7d476e32b55a" type="video/mp4">
+    <source src="https://github.com/csabatatrai-ulx/hermes-rocketchat-team-gateway/releases/download/v1.0.0/demo.mp4" type="video/mp4">
     <a href="https://github.com/csabatatrai-ulx/hermes-rocketchat-team-gateway#readme">Watch the demo on GitHub</a>
   </video>
 </div>
@@ -50,7 +50,7 @@ hide:
 
 <div class="video-frame">
   <video controls preload="metadata" playsinline poster="images/ops-poster.jpg">
-    <source src="https://github.com/user-attachments/assets/13bf2138-55c0-4fbd-9e7d-f0fc7ff10732" type="video/mp4">
+    <source src="https://github.com/csabatatrai-ulx/hermes-rocketchat-team-gateway/releases/download/v1.0.0/chatops-demo.mp4" type="video/mp4">
     <a href="https://github.com/csabatatrai-ulx/hermes-rocketchat-team-gateway#readme">Watch the ChatOps clip on GitHub</a>
   </video>
 </div>
