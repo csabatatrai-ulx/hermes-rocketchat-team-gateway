@@ -99,6 +99,16 @@ def main():
     tag = uuid.uuid4().hex[:6]
     print(f"Checking the try-it stack ({RC[:-8]}), run {tag}\n")
 
+    # Right after the first `up -d`, Hermes needs a minute or two before it connects. A question asked
+    # earlier is not answered (on a first start there is nothing to catch up from), so wait for the bot.
+    deadline = time.time() + 300
+    while call("users.getStatus?username=hermes", auth=alice).get("status") != "online":
+        if time.time() > deadline:
+            sys.exit("The hermes bot did not come online within 5 minutes. "
+                     "See: docker compose -f try/compose.yaml logs hermes")
+        print("Waiting for the hermes bot to connect (the first start takes a minute or two)...", flush=True)
+        time.sleep(10)
+
     # 1. A mention gets an answer that quotes the question and mentions the asker.
     m = post(alice, rid, f"@hermes hello from alice {tag}")
     r = wait(m, rid, alice, lambda f: m["_id"] in text(f), timeout=180)

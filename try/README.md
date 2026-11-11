@@ -13,7 +13,7 @@ docker compose -f try/compose.yaml up -d
 python3 try/check.py
 ```
 
-It starts with a **scripted demo model**: no account, no API key. It is not AI; it answers with fixed text, and asks to run a terminal command when you ask it to delete something. Everything around the model is real: the plugin, Hermes, Rocket.Chat, the command guard and the approval buttons. `try/check.py` checks them end to end (7 checks, about 15 seconds; Python 3, standard library only) and exits non-zero if any fails.
+It starts with a **scripted demo model**: no account, no API key. It is not AI; it answers with fixed text, and asks to run a terminal command when you ask it to delete something. Everything around the model is real: the plugin, Hermes, Rocket.Chat, the command guard and the approval buttons. `try/check.py` checks them end to end (7 checks, about 15 seconds once the bot is up, which takes a minute or two on the first start; Python 3, standard library only) and exits non-zero if any fails.
 
 ### A real model
 

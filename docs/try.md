@@ -18,7 +18,7 @@ python3 try/check.py
 
 It starts with a **scripted demo model**: no account, no API key. It is not AI; it answers with fixed text, and asks to run a terminal command when you ask it to delete something. Everything around the model is real: the plugin, Hermes, Rocket.Chat, the command guard and the approval buttons.
 
-`try/check.py` checks them end to end and exits non-zero if any check fails (Python 3, standard library only, about 15 seconds):
+`try/check.py` checks them end to end and exits non-zero if any check fails (Python 3, standard library only, about 15 seconds once the bot is up; on the first start it first waits a minute or two for the bot to connect):
 
 ```text
 PASS  a mention gets an answer that quotes the question and mentions the asker
