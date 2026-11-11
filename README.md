@@ -1,4 +1,4 @@
-![Rocket.Chat Team Gateway for Hermes Agent. One AI bot. A whole team. Zero chaos. Developed at ULX. Artwork: Hermes, the messenger, connecting chat messages across a starry sky.](docs/images/banner.webp)
+<a href="https://csabatatrai-ulx.github.io/hermes-rocketchat-team-gateway/"><img src="docs/images/banner.webp" alt="Rocket.Chat Team Gateway for Hermes Agent. One AI bot. A whole team. Zero chaos. Developed at ULX. Artwork: Hermes, the messenger, connecting chat messages across a starry sky."></a>
 
 # Rocket.Chat Team Gateway for Hermes Agent
 
@@ -6,6 +6,8 @@
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 [![Hermes Agent 0.22.3+](https://img.shields.io/badge/Hermes%20Agent-0.22.3%2B-6d28d9)](https://hermes-agent.nousresearch.com/)
 [![Dependencies: aiohttp only, also used by Hermes's own messaging adapters](https://img.shields.io/badge/dependencies-aiohttp%20only-2e7d32)](requirements.txt)
+
+**Documentation:** https://csabatatrai-ulx.github.io/hermes-rocketchat-team-gateway/
 
 **Bringing Hermes Agent into the enterprise team chat.** Rocket.Chat is the open source, self-hosted chat that organizations choose when their conversations must stay on their own servers. This [Hermes Agent](https://hermes-agent.nousresearch.com/) platform adapter makes Hermes a safe colleague there: one bot for a whole team, default-deny commands, and approval buttons so a person decides on dangerous actions. It only carries conversations, like Hermes's own Slack and Mattermost adapters; the agent keeps [every tool Hermes has](#tools-everything-hermes-has-none-of-its-own).
 
